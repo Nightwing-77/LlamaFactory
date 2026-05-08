@@ -322,10 +322,26 @@ class MMPluginMixin:
                 # Already a numpy array
                 results.append(audio)
                 sampling_rates.append(sampling_rate)
-            elif isinstance(audio, dict) and "bytes" in audio:
-                # HuggingFace datasets format: {"bytes": bytes, "path": str}
+            elif isinstance(audio, dict):
+                # HuggingFace datasets format - handle various dict structures
                 import io
-                audio_buffer = io.BytesIO(audio["bytes"])
+                
+                # Get audio bytes from various possible keys
+                audio_bytes = None
+                if "bytes" in audio:
+                    audio_bytes = audio["bytes"]
+                elif "array" in audio:
+                    # Some HF datasets use 'array' key with numpy array
+                    audio_np = audio["array"]
+                    if isinstance(audio_np, np.ndarray):
+                        results.append(audio_np)
+                        sampling_rates.append(audio.get("sampling_rate", sampling_rate))
+                        continue
+                
+                if audio_bytes is None:
+                    raise ValueError(f"Dict audio has no 'bytes' or 'array' key. Keys: {list(audio.keys())}")
+                
+                audio_buffer = io.BytesIO(audio_bytes)
                 audio_tensor, sr = torchaudio.load(audio_buffer)
                 if audio_tensor.shape[0] > 1:
                     audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
