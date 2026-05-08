@@ -378,17 +378,20 @@ class ShrutilipiSttConverter:
         audio_data = examples.get("audio_filepath")
         text = examples.get("text", "")
         
-        # Build ShareGPT format conversations
-        conversations = [
-            {"from": "human", "value": "<audio>\nTranscribe this audio"},
-            {"from": "gpt", "value": text}
-        ]
+        # Build aligned format for supervised processor
+        # _prompt: user message with audio placeholder
+        # _response: assistant message with transcription
+        prompt = [{"role": "user", "content": "<audio>\nTranscribe this audio"}]
+        response = [{"role": "assistant", "content": text}]
         
         return {
-            "conversations": conversations,
-            "audios": [audio_data] if audio_data else [],
-            "images": [],
-            "videos": []
+            "_prompt": prompt,
+            "_response": response,
+            "_system": "",
+            "_tools": "",
+            "_images": [],
+            "_videos": [],
+            "_audios": [audio_data] if audio_data else [],
         }
 
 
