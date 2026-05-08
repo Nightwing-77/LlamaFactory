@@ -18,8 +18,7 @@ buffer_size: 65536  # Larger buffer for audio data
 #   prompt: text          -> maps to text/transcription
 
 # Audio Encoder - Trainable for Hindi adaptation
-freeze_audio_encoder: false
-freeze_audio_tower: false  # Unfreeze audio encoder
+freeze_audio_encoder: false  # Unfreeze audio encoder for Hindi adaptation
 
 # LoRA for LLM backbone
 finetuning_type: lora
@@ -42,7 +41,7 @@ cutoff_len: 1024  # Audio transcription doesn't need long context
 
 # Optimizer
 lr_scheduler_type: cosine
-warmup_ratio: 0.05
+warmup_steps: 100  # ~5% of first epoch
 
 # Gradient checkpointing for memory saving
 gradient_checkpointing: true
