@@ -32,8 +32,8 @@ use_rslora: true  # Use rank-stabilized LoRA for better stability
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 8
 learning_rate: 2.0e-4  # Higher LR for adapter tuning
-num_train_epochs: 1.0
-max_steps: -1
+num_train_epochs: -1  # Disabled in streaming
+max_steps: 10000     # Set explicit steps for streaming
 max_samples: null  # Use all samples in streaming
 
 # Sequence length
