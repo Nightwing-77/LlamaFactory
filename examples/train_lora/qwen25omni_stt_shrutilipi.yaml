@@ -64,6 +64,12 @@ save_total_limit: 5  # Keep only last 5 checkpoints to save space
 plot_loss: true
 report_to: wandb  # Optional: track training
 
+# Debugging and logging
+log_level: debug  # Show detailed logs
+logging_first_step: true  # Log first step
+dataloader_pin_memory: false  # Reduce memory usage
+neftune_noise_alpha: 0  # Disable NEFTune for stability
+
 # Export
 export_dir: exports/qwen25omni-lora-stt-hindi
 
