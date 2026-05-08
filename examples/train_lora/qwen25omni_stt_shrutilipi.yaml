@@ -1,0 +1,73 @@
+# Qwen2.5-Omni STT Training on Shrutilipi Hindi Dataset
+# Direct streaming from HF Hub with audio bytes
+
+model_name_or_path: Qwen/Qwen2.5-Omni-7B
+template: qwen2_omni
+
+# STT Mode - Thinker only (audio encoder -> LLM)
+train_tts: false  # Important: Only thinker is loaded
+
+# Dataset - Direct streaming from HF Hub
+dataset: shrutilipi_hindi
+streaming: true
+buffer_size: 65536  # Larger buffer for audio data
+
+# Audio column mapping (audio_filepath contains bytes, not path)
+# Already configured in dataset_info.json:
+#   audio: audio_filepath  -> maps to audio column
+#   prompt: text          -> maps to text/transcription
+
+# Audio Encoder - Trainable for Hindi adaptation
+freeze_audio_encoder: false
+freeze_audio_tower: false  # Unfreeze audio encoder
+
+# LoRA for LLM backbone
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+use_rslora: true  # Use rank-stabilized LoRA for better stability
+
+# Training
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 2.0e-4  # Higher LR for adapter tuning
+num_train_epochs: 1.0
+max_steps: -1
+max_samples: null  # Use all samples in streaming
+
+# Sequence length
+cutoff_len: 1024  # Audio transcription doesn't need long context
+
+# Optimizer
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+
+# Gradient checkpointing for memory saving
+gradient_checkpointing: true
+
+# Streaming settings
+preprocessing_num_workers: null  # Disabled in streaming mode
+dataloader_num_workers: 2
+
+# Evaluation
+val_size: 0.0  # No validation split in streaming (or use eval_dataset)
+# eval_dataset: eval_set  # If you have a separate eval dataset
+
+# Saving
+output_dir: saves/qwen25omni-lora-stt-hindi
+logging_steps: 10
+save_steps: 500
+plot_loss: true
+
+# Export
+export_dir: exports/qwen25omni-lora-stt-hindi
+
+# Hardware
+flash_attn: fa2  # Use Flash Attention 2
+
+# Note: 
+# - Audio bytes from 'audio_filepath' column are processed directly
+# - Text from 'text' column is the transcription target
+# - Streaming mode allows training on full 50GB+ dataset without downloading

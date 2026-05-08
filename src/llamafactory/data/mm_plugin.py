@@ -309,21 +309,47 @@ class MMPluginMixin:
     def _regularize_audios(
         self, audios: list["AudioInput"], sampling_rate: float, **kwargs
     ) -> "RegularizedAudioOutput":
-        r"""Regularizes audios to avoid error. Including reading and resampling."""
+        r"""Regularizes audios to avoid error. Including reading and resampling.
+        
+        Supports:
+        - File paths (str)
+        - Audio bytes (dict with 'bytes' key from HuggingFace datasets)
+        - numpy arrays
+        """
         results, sampling_rates = [], []
         for audio in audios:
-            if not isinstance(audio, np.ndarray):
-                audio, sr = torchaudio.load(audio)
-                if audio.shape[0] > 1:
-                    audio = audio.mean(dim=0, keepdim=True)
+            if isinstance(audio, np.ndarray):
+                # Already a numpy array
+                results.append(audio)
+                sampling_rates.append(sampling_rate)
+            elif isinstance(audio, dict) and "bytes" in audio:
+                # HuggingFace datasets format: {"bytes": bytes, "path": str}
+                import io
+                audio_buffer = io.BytesIO(audio["bytes"])
+                audio_tensor, sr = torchaudio.load(audio_buffer)
+                if audio_tensor.shape[0] > 1:
+                    audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
+                
+                if sr != sampling_rate:
+                    audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
+                
+                audio_np = audio_tensor.squeeze(0).numpy()
+                results.append(audio_np)
+                sampling_rates.append(sampling_rate)
+            elif isinstance(audio, (str, os.PathLike)):
+                # File path
+                audio_tensor, sr = torchaudio.load(audio)
+                if audio_tensor.shape[0] > 1:
+                    audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
 
                 if sr != sampling_rate:
-                    audio = torchaudio.functional.resample(audio, sr, sampling_rate)
+                    audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
 
-                audio = audio.squeeze(0).numpy()
-
-            results.append(audio)
-            sampling_rates.append(sampling_rate)
+                audio_np = audio_tensor.squeeze(0).numpy()
+                results.append(audio_np)
+                sampling_rates.append(sampling_rate)
+            else:
+                raise ValueError(f"Unsupported audio type: {type(audio)}")
 
         return {"audios": results, "sampling_rates": sampling_rates}
 

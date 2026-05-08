@@ -745,5 +745,19 @@
       "prompt": "content"
     },
     "folder": "python"
+  },
+  "shrutilipi_hindi": {
+    "hf_hub_url": "ai4bharat/Shrutilipi",
+    "subset": "hindi",
+    "columns": {
+      "prompt": "text",
+      "audio": "audio_filepath"
+    },
+    "tags": {
+      "role_tag": "from",
+      "content_tag": "value",
+      "user_tag": "human",
+      "assistant_tag": "gpt"
+    }
   }
 }
