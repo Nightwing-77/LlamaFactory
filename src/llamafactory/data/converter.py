@@ -371,6 +371,7 @@ DATASET_CONVERTERS = {
     "alpaca": AlpacaDatasetConverter,
     "sharegpt": SharegptDatasetConverter,
     "openai": OpenAIDatasetConverter,
+    "shrutilipi_stt": ShrutilipiSttConverter,
 }
 
 
