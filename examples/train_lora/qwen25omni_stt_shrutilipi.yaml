@@ -23,9 +23,10 @@ freeze_audio_encoder: false  # Unfreeze audio encoder for Hindi adaptation
 # LoRA for LLM backbone
 finetuning_type: lora
 lora_target: all
-lora_rank: 32
-lora_alpha: 64
-lora_dropout: 0.05
+# LoRA - High rank for better STT adaptation
+lora_rank: 512
+lora_alpha: 1024
+lora_dropout: 0.0505
 use_rslora: true  # Use rank-stabilized LoRA for better stability
 
 # Training
