@@ -392,6 +392,14 @@ class ShrutilipiSttConverter:
         }
 
 
+DATASET_CONVERTERS = {
+    "alpaca": AlpacaDatasetConverter,
+    "sharegpt": SharegptDatasetConverter,
+    "openai": OpenAIDatasetConverter,
+    "shrutilipi_stt": ShrutilipiSttConverter,
+}
+
+
 def get_dataset_converter(name: str, dataset_attr: "DatasetAttr", data_args: "DataArguments") -> "DatasetConverter":
     r"""Get a dataset converter."""
     if name not in DATASET_CONVERTERS:
