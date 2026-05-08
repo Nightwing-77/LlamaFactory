@@ -27,6 +27,7 @@ from ...model import load_model, load_tokenizer
 from ..trainer_utils import create_modelcard_and_push, create_ref_model
 from .metric import ComputeAccuracy, ComputeSimilarity, eval_logit_processor
 from .trainer import CustomSeq2SeqTrainer
+from .tts_trainer import TTSTrainer
 
 
 if TYPE_CHECKING:
@@ -49,7 +50,10 @@ def run_sft(
     tokenizer_module = load_tokenizer(model_args)
     tokenizer = tokenizer_module["tokenizer"]
     template = get_template_and_fix_tokenizer(tokenizer, data_args)
-    dataset_module = get_dataset(template, model_args, data_args, training_args, stage="sft", **tokenizer_module)
+    dataset_module = get_dataset(
+        template, model_args, data_args, training_args, stage="sft", 
+        train_tts=finetuning_args.train_tts, **tokenizer_module
+    )
     model = load_model(tokenizer, model_args, finetuning_args, training_args.do_train)
 
     ref_model = None
@@ -103,18 +107,29 @@ def run_sft(
     gen_kwargs["pad_token_id"] = tokenizer.pad_token_id
 
     # Initialize our Trainer
-    trainer = CustomSeq2SeqTrainer(
-        model=model,
-        args=training_args,
-        finetuning_args=finetuning_args,
-        data_collator=data_collator,
-        callbacks=callbacks,
-        gen_kwargs=gen_kwargs,
-        ref_model=ref_model,
-        **dataset_module,
-        **tokenizer_module,
-        **metric_module,
-    )
+    if finetuning_args.train_tts:
+        logger.info_rank0("Using TTSTrainer for audio codec generation training")
+        trainer = TTSTrainer(
+            model=model,
+            args=training_args,
+            data_collator=data_collator,
+            callbacks=callbacks,
+            **dataset_module,
+            **tokenizer_module,
+        )
+    else:
+        trainer = CustomSeq2SeqTrainer(
+            model=model,
+            args=training_args,
+            finetuning_args=finetuning_args,
+            data_collator=data_collator,
+            callbacks=callbacks,
+            gen_kwargs=gen_kwargs,
+            ref_model=ref_model,
+            **dataset_module,
+            **tokenizer_module,
+            **metric_module,
+        )
 
     # Training
     if training_args.do_train:

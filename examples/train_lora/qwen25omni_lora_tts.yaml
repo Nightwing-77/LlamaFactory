@@ -1,0 +1,61 @@
+# Copyright 2025 the LlamaFactory team.
+#
+# examples/train_lora/qwen25omni_lora_tts.yaml
+#
+# TTS (Text-to-Speech) Training Configuration for Qwen2.5-Omni
+# 
+# This config trains the Thinker to output audio codec tokens that the Talker can decode.
+# The Mimi codec is used ONLY to extract target audio codes from ground truth audio.
+# Audio encoder and code2wav decoder are FROZEN - we don't train them.
+#
+# Usage:
+#   llamafactory-cli train examples/train_lora/qwen25omni_lora_tts.yaml
+
+model_name_or_path: Qwen/Qwen2.5-Omni-7B
+template: qwen2_omni
+
+# TTS Training Mode
+train_tts: true
+freeze_audio_encoder: true  # Frozen - don't train
+freeze_codec_head: false    # Trainable - we train this!
+audio_codec_vocab_size: 16000
+
+# LoRA Settings
+finetuning_type: lora
+lora_target: all
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+
+# Dataset
+dataset: tts_dataset  # Your TTS dataset with audio_codes column
+cutoff_len: 2048
+max_samples: 100000
+overwrite_cache: true
+preprocessing_num_workers: 4
+
+# Training
+output_dir: saves/qwen25omni-7b/lora/tts
+overwrite_output_dir: true
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 5.0e-5
+num_train_epochs: 3.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_find_unused_parameters: false
+
+# Optimization
+flash_attn: fa2
+
+# Logging
+logging_steps: 10
+save_steps: 100
+plot_loss: true
+
+# TTS Specific Notes:
+# 1. Dataset must have 'audio_codes' column with Mimi codec tokens
+# 2. Model keeps full Qwen2.5-Omni (thinker + talker.codec_head)
+# 3. Audio encoder frozen, codec_head trainable, code2wav frozen
+# 4. Loss computed on codec token predictions vs Mimi targets

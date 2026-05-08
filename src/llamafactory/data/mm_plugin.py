@@ -2349,6 +2349,9 @@ class GLM4VPlugin(Qwen2VLPlugin):
 class Qwen2OmniPlugin(Qwen2VLPlugin):
     audio_bos_token: str = "<|audio_start|>"
     audio_eos_token: str = "<|audio_end|>"
+    # TTS Speaker tokens for voice conditioning
+    spk_start_token: str = "<|spk_start|>"
+    spk_end_token: str = "<|spk_end|>"
 
     @override
     def _get_mm_inputs(

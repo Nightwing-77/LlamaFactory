@@ -324,11 +324,16 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
     def __call__(self, features: list[dict[str, Any]]) -> dict[str, "torch.Tensor"]:
         batch_images, batch_videos, batch_audios = [], [], []
         batch_imglens, batch_vidlens, batch_audlens, batch_input_ids = [], [], [], []
+        batch_audio_code_targets = []  # TTS: audio codec targets
         packing_params_list: list[dict[str, Any] | None] = []
         for feature in features:
             images = feature.pop("images", None) or []
             videos = feature.pop("videos", None) or []
             audios = feature.pop("audios", None) or []
+            # TTS: extract audio codec targets
+            audio_codes = feature.pop("audio_code_targets", None)
+            if audio_codes is not None and len(audio_codes) > 0:
+                batch_audio_code_targets.append(audio_codes)
             batch_images.extend(images)
             batch_videos.extend(videos)
             batch_audios.extend(audios)
@@ -469,12 +474,47 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
         features.update(mm_inputs)
 
+        # TTS: Add padded audio codec targets to batch
+        if len(batch_audio_code_targets) > 0:
+            features["audio_code_targets"] = self._pad_audio_code_targets(batch_audio_code_targets)
+
         if "image_bound" in features:  # for minicpmv inputs
             bsz, seq_length = features["input_ids"].shape
             features["position_ids"] = torch.arange(seq_length).long().repeat(bsz, 1)
             return {"data": features, "input_ids": features["input_ids"], "labels": features["labels"]}
 
         return features
+
+    def _pad_audio_code_targets(self, batch_audio_code_targets: list[list[list[int]]]) -> "torch.Tensor":
+        r"""Pad audio codec targets to max length in batch for TTS training.
+        
+        Args:
+            batch_audio_code_targets: List of audio codec targets, each is a list of [num_codebooks, seq_len]
+            
+        Returns:
+            Padded tensor of shape [batch_size, num_codebooks, max_seq_len]
+        """
+        # Find max sequence length
+        max_seq_len = max(len(codes[0]) if codes else 0 for codes in batch_audio_code_targets)
+        num_codebooks = len(batch_audio_code_targets[0]) if batch_audio_code_targets else 0
+        
+        if max_seq_len == 0 or num_codebooks == 0:
+            return torch.empty(0)
+        
+        padded_batch = []
+        for codes in batch_audio_code_targets:
+            padded_codes = []
+            for codebook in codes:
+                # Pad each codebook to max_seq_len
+                pad_len = max_seq_len - len(codebook)
+                if pad_len > 0:
+                    padded = codebook + [IGNORE_INDEX] * pad_len
+                else:
+                    padded = codebook[:max_seq_len]
+                padded_codes.append(padded)
+            padded_batch.append(padded_codes)
+        
+        return torch.tensor(padded_batch, dtype=torch.long)
 
 
 @dataclass

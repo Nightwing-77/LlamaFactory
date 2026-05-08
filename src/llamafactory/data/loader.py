@@ -32,6 +32,7 @@ from .processor import (
     SupervisedDatasetProcessor,
     UnsupervisedDatasetProcessor,
 )
+from .processor.tts_processor import TTSDatasetProcessor
 
 
 if TYPE_CHECKING:
@@ -193,9 +194,14 @@ def _get_dataset_processor(
     tokenizer: "PreTrainedTokenizer",
     processor: Optional["ProcessorMixin"],
     do_generate: bool = False,
+    train_tts: bool = False,
 ) -> "DatasetProcessor":
     r"""Return the corresponding dataset processor."""
-    if stage == "pt":
+    # Use TTS processor for text-to-speech training with audio codec targets
+    if train_tts and stage == "sft":
+        logger.info_rank0("Using TTSDatasetProcessor for TTS training with audio codec targets")
+        dataset_processor_class = TTSDatasetProcessor
+    elif stage == "pt":
         dataset_processor_class = PretrainDatasetProcessor
     elif stage == "sft" and not do_generate:
         if data_args.packing:
@@ -235,13 +241,16 @@ def _get_preprocessed_dataset(
     tokenizer: "PreTrainedTokenizer",
     processor: Optional["ProcessorMixin"] = None,
     is_eval: bool = False,
+    train_tts: bool = False,
 ) -> Union["Dataset", "IterableDataset"] | None:
     r"""Preprocesses the dataset, including format checking and tokenization."""
     if dataset is None:
         return None
 
     dataset_processor = _get_dataset_processor(
-        data_args, stage, template, tokenizer, processor, do_generate=(training_args.predict_with_generate and is_eval)
+        data_args, stage, template, tokenizer, processor, 
+        do_generate=(training_args.predict_with_generate and is_eval),
+        train_tts=train_tts
     )
     column_names = list(next(iter(dataset)).keys())
     kwargs = {}
@@ -281,6 +290,7 @@ def get_dataset(
     stage: Literal["pt", "sft", "rm", "ppo", "kto"],
     tokenizer: "PreTrainedTokenizer",
     processor: Optional["ProcessorMixin"] = None,
+    train_tts: bool = False,
 ) -> "DatasetModule":
     r"""Get the train dataset and optionally gets the evaluation dataset."""
     # Load tokenized dataset if path exists
@@ -316,12 +326,14 @@ def get_dataset(
 
         if "train" in train_dict:
             train_dict["train"] = _get_preprocessed_dataset(
-                train_dict["train"], data_args, training_args, stage, template, tokenizer, processor, is_eval=False
+                train_dict["train"], data_args, training_args, stage, template, tokenizer, processor, 
+                is_eval=False, train_tts=train_tts
             )
 
         for key in eval_dict:
             eval_dict[key] = _get_preprocessed_dataset(
-                eval_dict[key], data_args, training_args, stage, template, tokenizer, processor, is_eval=True
+                eval_dict[key], data_args, training_args, stage, template, tokenizer, processor, 
+                is_eval=True, train_tts=train_tts
             )
 
         # Combine train and eval dictionaries

@@ -17,6 +17,7 @@ from .pairwise import PairwiseDatasetProcessor
 from .pretrain import PretrainDatasetProcessor
 from .processor_utils import DatasetProcessor
 from .supervised import PackedSupervisedDatasetProcessor, SupervisedDatasetProcessor
+from .tts_processor import TTSDatasetProcessor
 from .unsupervised import UnsupervisedDatasetProcessor
 
 
@@ -27,5 +28,6 @@ __all__ = [
     "PairwiseDatasetProcessor",
     "PretrainDatasetProcessor",
     "SupervisedDatasetProcessor",
+    "TTSDatasetProcessor",
     "UnsupervisedDatasetProcessor",
 ]

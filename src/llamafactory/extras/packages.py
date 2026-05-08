@@ -79,6 +79,11 @@ def is_mcore_adapter_available():
     return _is_package_available("mcore_adapter")
 
 
+def is_mimi_available():
+    r"""Check if Mimi codec is available."""
+    return _is_package_available("moshi")
+
+
 def is_pillow_available():
     return _is_package_available("PIL")
 

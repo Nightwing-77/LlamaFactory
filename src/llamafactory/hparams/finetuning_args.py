@@ -536,6 +536,22 @@ class FinetuningArguments(
         default=False,
         metadata={"help": "Whether or not to freeze the language model in MLLM training."},
     )
+    train_tts: bool = field(
+        default=False,
+        metadata={"help": "Whether or not to train TTS (Text-to-Speech) for audio codec generation."},
+    )
+    freeze_audio_encoder: bool = field(
+        default=True,
+        metadata={"help": "Whether or not to freeze the audio encoder in TTS training."},
+    )
+    freeze_codec_head: bool = field(
+        default=False,
+        metadata={"help": "Whether or not to freeze the codec head in TTS training."},
+    )
+    audio_codec_vocab_size: int = field(
+        default=16000,
+        metadata={"help": "Vocabulary size for audio codec tokens in TTS training."},
+    )
     compute_accuracy: bool = field(
         default=False,
         metadata={"help": "Whether or not to compute the token-level accuracy at evaluation."},

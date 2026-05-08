@@ -171,7 +171,30 @@ def load_model(
             else:
                 model = load_class.from_pretrained(**init_kwargs)
                 if getattr(model.config, "model_type", None) in ["qwen2_5_omni", "qwen3_omni_moe"]:
-                    model = getattr(model, "thinker")
+                    if finetuning_args.train_tts:
+                        # For TTS training, keep full model (thinker + talker.codec_head)
+                        logger.info_rank0("TTS training mode: Keeping full Qwen2.5-Omni model with talker.codec_head")
+                        # Freeze audio encoder if specified
+                        if finetuning_args.freeze_audio_encoder and hasattr(model, "thinker"):
+                            if hasattr(model.thinker, "audio_tower"):
+                                for param in model.thinker.audio_tower.parameters():
+                                    param.requires_grad = False
+                                logger.info_rank0("Frozen audio_tower (audio encoder)")
+                        # Freeze codec head if specified
+                        if finetuning_args.freeze_codec_head and hasattr(model, "talker"):
+                            if hasattr(model.talker, "codec_head"):
+                                for param in model.talker.codec_head.parameters():
+                                    param.requires_grad = False
+                                logger.info_rank0("Frozen talker.codec_head")
+                        # Freeze code2wav (decoder) - always frozen for TTS training
+                        if hasattr(model, "talker"):
+                            if hasattr(model.talker, "code2wav"):
+                                for param in model.talker.code2wav.parameters():
+                                    param.requires_grad = False
+                                logger.info_rank0("Frozen talker.code2wav (audio decoder)")
+                    else:
+                        # Standard mode: extract only thinker for audio-text understanding
+                        model = getattr(model, "thinker")
 
         if model_args.mixture_of_depths == "convert":
             model = convert_pretrained_model_to_mod(model, config, model_args)
