@@ -63,8 +63,10 @@ plot_loss: true
 # Export
 export_dir: exports/qwen25omni-lora-stt-hindi
 
-# Hardware
-flash_attn: fa2  # Use Flash Attention 2
+# Hardware (AMD MI300X)
+flash_attn: disabled  # FA2 not available on ROCm, use PyTorch native attn
+# Or if you have ROCm Flash Attention:
+# flash_attn: auto
 
 # Note: 
 # - Audio bytes from 'audio_filepath' column are processed directly
