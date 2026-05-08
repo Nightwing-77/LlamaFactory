@@ -367,17 +367,31 @@ class OpenAIDatasetConverter(DatasetConverter):
         return output
 
 
-DATASET_CONVERTERS = {
-    "alpaca": AlpacaDatasetConverter,
-    "sharegpt": SharegptDatasetConverter,
-    "openai": OpenAIDatasetConverter,
-    "shrutilipi_stt": ShrutilipiSttConverter,
-}
+class ShrutilipiSttConverter:
+    """Converter for Shrutilipi STT dataset (audio bytes + text transcription)."""
+    
+    def __init__(self, dataset_attr: "DatasetAttr", data_args: "DataArguments"):
+        self.dataset_attr = dataset_attr
+
+    def __call__(self, examples: dict[str, Any]) -> dict[str, Any]:
+        # Get audio bytes and text
+        audio_data = examples.get("audio_filepath")
+        text = examples.get("text", "")
+        
+        # Build ShareGPT format conversations
+        conversations = [
+            {"from": "human", "value": "<audio>\nTranscribe this audio"},
+            {"from": "gpt", "value": text}
+        ]
+        
+        return {
+            "conversations": conversations,
+            "audios": [audio_data] if audio_data else [],
+            "images": [],
+            "videos": []
+        }
 
 
-def register_dataset_converter(name: str, dataset_converter: type["DatasetConverter"]) -> None:
-    r"""Register a new dataset converter."""
-    if name in DATASET_CONVERTERS:
         raise ValueError(f"Dataset converter {name} already exists.")
 
     DATASET_CONVERTERS[name] = dataset_converter
