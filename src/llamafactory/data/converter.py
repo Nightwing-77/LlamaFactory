@@ -392,11 +392,6 @@ class ShrutilipiSttConverter:
         }
 
 
-        raise ValueError(f"Dataset converter {name} already exists.")
-
-    DATASET_CONVERTERS[name] = dataset_converter
-
-
 def get_dataset_converter(name: str, dataset_attr: "DatasetAttr", data_args: "DataArguments") -> "DatasetConverter":
     r"""Get a dataset converter."""
     if name not in DATASET_CONVERTERS:
