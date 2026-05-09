@@ -10,7 +10,7 @@ train_tts: false  # Important: Only thinker is loaded
 # Dataset - Direct streaming from HF Hub
 dataset: shrutilipi_hindi
 streaming: true
-buffer_size: 65536  # Larger buffer for audio data
+buffer_size: 8192  # Reduced buffer to prevent hanging
 
 # Audio column mapping (audio_filepath contains bytes, not path)
 # Already configured in dataset_info.json:
@@ -65,10 +65,14 @@ plot_loss: true
 report_to: wandb  # Optional: track training
 
 # Debugging and logging
-log_level: debug  # Show detailed logs
+log_level: info  # Reduce verbosity
 logging_first_step: true  # Log first step
 dataloader_pin_memory: false  # Reduce memory usage
 neftune_noise_alpha: 0  # Disable NEFTune for stability
+
+# Timeout and stability
+dataloader_timeout: 300  # 5 minute timeout for data loading
+max_grad_norm: 1.0  # Gradient clipping
 
 # Export
 export_dir: exports/qwen25omni-lora-stt-hindi
