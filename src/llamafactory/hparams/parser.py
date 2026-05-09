@@ -498,6 +498,11 @@ def get_train_args(args: dict[str, Any] | list[str] | None = None) -> _TRAIN_CLS
     elif training_args.fp16:
         model_args.compute_dtype = torch.float16
 
+    # Keep model-side GC switch aligned with HF TrainingArguments.
+    # Previously, `disable_gradient_checkpointing` defaulted to False and could enable GC
+    # even when `gradient_checkpointing: false` was set in YAML.
+    model_args.disable_gradient_checkpointing = not getattr(training_args, "gradient_checkpointing", False)
+
     model_args.device_map = {"": get_current_device()}
     model_args.model_max_length = data_args.cutoff_len
     model_args.block_diag_attn = data_args.neat_packing

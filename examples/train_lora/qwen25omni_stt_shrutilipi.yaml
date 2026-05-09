@@ -38,11 +38,11 @@ pure_bf16: true
 
 # Training
 bf16: true  # Recommended on MI300X / ROCm (avoids fp32-only path warnings)
-per_device_train_batch_size: 1
-gradient_accumulation_steps: 8
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 2
 learning_rate: 2.0e-4  # Higher LR for adapter tuning
-num_train_epochs: -1
-max_steps: 1000
+num_train_epochs: 3
+max_steps: 50000
 max_samples: null
 logging_steps: 1  # Log every step to track progress
 
@@ -58,7 +58,7 @@ gradient_checkpointing: false
 
 # Streaming settings
 preprocessing_num_workers: null
-dataloader_num_workers: 0
+dataloader_num_workers: 2
 
 # Evaluation
 val_size: 0.0  # No validation split in streaming (or use eval_dataset)
