@@ -86,7 +86,7 @@ def run_sft(
         neat_packing=data_args.neat_packing,
         attn_implementation=getattr(model.config, "_attn_implementation", None),
         compute_dtype=model_args.compute_dtype,
-        **tokenizer_module,
+        **{k: v for k, v in tokenizer_module.items() if k != "tokenizer"},
     )
     logger.info_rank0("Data collator created successfully")
 
@@ -143,7 +143,7 @@ def run_sft(
             data_collator=data_collator,
             callbacks=callbacks,
             **dataset_module,
-            **{k: v for k, v in tokenizer_module.items() if k != "tokenizer"},
+            **{k: v for k, v in tokenizer_module.items() if k not in ["tokenizer", "processor"]},
             **metric_module,
         )
         logger.info_rank0("Trainer created successfully!")
