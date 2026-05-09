@@ -157,7 +157,17 @@ def run_sft(
         logger.info_rank0(f"Streaming: {data_args.streaming}")
         logger.info_rank0(f"Batch size: {training_args.per_device_train_batch_size}")
         logger.info_rank0(f"Grad accumulation: {training_args.gradient_accumulation_steps}")
-        logger.info_rank0(f"Train dataset size: {len(dataset_module.get('train_dataset', []))}")
+        _train_ds = dataset_module.get("train_dataset")
+        if _train_ds is None:
+            _train_size_msg = "none"
+        elif data_args.streaming:
+            _train_size_msg = "streaming (length not known until iteration)"
+        else:
+            try:
+                _train_size_msg = str(len(_train_ds))
+            except (TypeError, NotImplementedError):
+                _train_size_msg = "unknown"
+        logger.info_rank0(f"Train dataset size: {_train_size_msg}")
         logger.info_rank0("=== INITIALIZING TRAINER.TRAIN() ===")
         logger.info_rank0("Calling trainer.train() now...")
         logger.info_rank0(f"Trainer type: {type(trainer)}")
