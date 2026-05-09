@@ -56,6 +56,25 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         ref_model: Optional["torch.nn.Module"] = None,
         **kwargs,
     ) -> None:
+        from ...extras.logging import get_logger
+        logger = get_logger()
+        logger.info("=== CUSTOM TRAINER INIT START ===")
+        logger.info(f"Finetuning args: {finetuning_args}")
+        logger.info(f"Processor available: {processor is not None}")
+        logger.info(f"Model args: {model_args}")
+        logger.info("=== CUSTOM TRAINER INIT MIDDLE ===")
+        
+        kwargs["processing_class"] = kwargs.pop("tokenizer")
+        # Configure FP8 environment if enabled
+        training_args: TrainingArguments = kwargs.get("args")
+        if training_args.fp8:
+            configure_fp8_environment(training_args)
+            if getattr(training_args, "fp8_backend", "auto") == "te":
+                patch_accelerator_for_fp8()
+        
+        logger.info("=== CALLING SUPER().__INIT__ ===")
+        super().__init__(**kwargs)
+        logger.info("=== CUSTOM TRAINER INIT END ===")
         kwargs["processing_class"] = kwargs.pop("tokenizer")
         # Configure FP8 environment if enabled
         training_args: TrainingArguments = kwargs.get("args")
