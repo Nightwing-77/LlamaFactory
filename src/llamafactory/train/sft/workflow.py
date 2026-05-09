@@ -143,7 +143,7 @@ def run_sft(
             data_collator=data_collator,
             callbacks=callbacks,
             **dataset_module,
-            **tokenizer_module,
+            **{k: v for k, v in tokenizer_module.items() if k != "tokenizer"},
             **metric_module,
         )
         logger.info_rank0("Trainer created successfully!")
