@@ -27,9 +27,9 @@ freeze_vision_tower: false
 
 # LoRA — high rank stresses PEFT/ROCm during inject; raise only once stable.
 finetuning_type: lora
-lora_target: all
-lora_rank: 128
-lora_alpha: 256
+lora_target: q_proj, v_proj, k_proj, o_proj
+lora_rank: 32
+lora_alpha: 64
 lora_dropout: 0.05
 use_rslora: true
 
@@ -38,11 +38,11 @@ pure_bf16: true
 
 # Training
 bf16: true  # Recommended on MI300X / ROCm (avoids fp32-only path warnings)
-per_device_train_batch_size: 6
+per_device_train_batch_size: 4
 gradient_accumulation_steps: 2
-learning_rate: 2.0e-4  # Higher LR for adapter tuning
-num_train_epochs: 3
-max_steps: 10000
+learning_rate: 2.0e-6  # Higher LR for adapter tuning
+num_train_epochs: 1
+max_steps: 15000
 max_samples: null
 logging_steps: 20  # Reduce per-step logging overhead
 
