@@ -257,15 +257,22 @@ def load_model(
             model.load_state_dict(vhead_params, strict=False)
             logger.info_rank0(f"Loaded valuehead from checkpoint: {vhead_path}")
 
-    # Conv3D is not recommended when using torch 2.9.x
+    # Conv3D is not recommended when using torch 2.9.x.
+    # Allow override because some ROCm nightly stacks ship torch 2.9.x and users may accept perf regressions.
     if is_torch_version_greater_than("2.9.0") and not is_torch_version_greater_than("2.10.0"):
         if any(isinstance(m, torch.nn.Conv3d) for m in model.modules()):
-            raise ValueError(
+            allow = os.environ.get("LLAMAFACTORY_ALLOW_TORCH_2_9_CONV3D", "").lower() in ("1", "true", "yes")
+            msg = (
                 "Unsupported torch version detected: torch 2.9.x with Conv3D. "
                 "This combination is known to cause severe performance regression. "
-                "Please downgrade torch to <2.9 or remove Conv3D. "
-                "See https://github.com/pytorch/pytorch/issues/166122"
+                "Recommended: downgrade torch to <2.9 or remove Conv3D. "
+                "See https://github.com/pytorch/pytorch/issues/166122. "
+                "To proceed anyway, set LLAMAFACTORY_ALLOW_TORCH_2_9_CONV3D=1."
             )
+            if allow:
+                logger.warning_rank0(msg)
+            else:
+                raise ValueError(msg)
 
     if not is_trainable:
         model.requires_grad_(False)
