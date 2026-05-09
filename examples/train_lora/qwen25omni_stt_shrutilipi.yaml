@@ -7,11 +7,10 @@ template: qwen2_omni
 # STT Mode - Thinker only (audio encoder -> LLM)
 train_tts: false  # Important: Only thinker is loaded
 
-# Dataset - Streaming with training split to control data loading
+# Dataset - Streaming to avoid loading full dataset
 dataset: shrutilipi_hindi
 streaming: true  # Re-enabled to avoid loading full dataset
 buffer_size: 512  # Small buffer for stability
-dataset_split: train  # Use only train split
 
 # Audio column mapping (audio_filepath contains bytes, not path)
 # Already configured in dataset_info.json:
