@@ -26,7 +26,6 @@ from ...extras.ploting import plot_loss
 from ...model import load_model, load_tokenizer
 from ..trainer_utils import create_modelcard_and_push, create_ref_model
 from .metric import ComputeAccuracy, ComputeSimilarity, eval_logit_processor
-from .trainer import CustomSeq2SeqTrainer
 from .tts_trainer import TTSTrainer
 
 
@@ -135,12 +134,11 @@ def run_sft(
             **tokenizer_module,
         )
     else:
-        logger.info_rank0("Using CustomSeq2SeqTrainer for SFT training")
-        logger.info_rank0("Creating CustomSeq2SeqTrainer...")
-        trainer = CustomSeq2SeqTrainer(
+        logger.info_rank0("Using standard Seq2SeqTrainer for SFT training")
+        logger.info_rank0("Creating Seq2SeqTrainer...")
+        trainer = Seq2SeqTrainer(
             model=model,
             args=training_args,
-            finetuning_args=finetuning_args,
             data_collator=data_collator,
             callbacks=callbacks,
             gen_kwargs=gen_kwargs,
