@@ -23,14 +23,14 @@ buffer_size: 128
 
 # Audio path for Hindi STT: unfreeze multimodal backbone so LoRA can touch audio encoder (freeze_vision_tower=false).
 # freeze_audio_encoder is only wired for full Omni + TTS; use freeze_vision_tower here.
-freeze_vision_tower: false
+freeze_vision_tower: true
 
 # LoRA — high rank stresses PEFT/ROCm during inject; raise only once stable.
 finetuning_type: lora
 lora_target: q_proj, v_proj, k_proj, o_proj
 lora_rank: 32
 lora_alpha: 64
-lora_dropout: 0.05
+lora_dropout: 0.03
 use_rslora: true
 
 # Keep adapter weights in bf16 (often more stable on ROCm than default fp32-upcast for LoRA)
