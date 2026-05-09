@@ -73,11 +73,6 @@ neftune_noise_alpha: 0  # Disable NEFTune for stability
 # Stability settings
 max_grad_norm: 1.0  # Gradient clipping
 
-# Additional debugging
-include_inputs_for_metrics: true  # Include inputs in metrics
-include_num_input_tokens_seen: true  # Track tokens processed
-ddp_timeout: 1800  # 30 min timeout for distributed
-
 # Export
 export_dir: exports/qwen25omni-lora-stt-hindi
 
