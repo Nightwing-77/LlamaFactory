@@ -7,10 +7,10 @@ template: qwen2_omni
 # STT Mode - Thinker only (audio encoder -> LLM)
 train_tts: false  # Important: Only thinker is loaded
 
-# Dataset - Direct streaming from HF Hub
+# Dataset - Test without streaming first
 dataset: shrutilipi_hindi
-streaming: true
-buffer_size: 8192  # Reduced buffer to prevent hanging
+streaming: false  # Disabled to test if streaming causes hanging
+# buffer_size: 8192  # Not used when streaming=false
 
 # Audio column mapping (audio_filepath contains bytes, not path)
 # Already configured in dataset_info.json:
@@ -33,9 +33,9 @@ use_rslora: true  # Use rank-stabilized LoRA for better stability
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 8
 learning_rate: 2.0e-4  # Higher LR for adapter tuning
-num_train_epochs: -1  # Disabled in streaming
-max_steps: 18750     # ~150k samples (150000/8=18750 steps with grad_accum=8)
-max_samples: null  # Use all samples in streaming
+num_train_epochs: 1  # Test with 1 epoch
+max_steps: -1  # Disabled when using epochs
+max_samples: 1000  # Test with 1000 samples first
 
 # Sequence length
 cutoff_len: 1024  # Audio transcription doesn't need long context
