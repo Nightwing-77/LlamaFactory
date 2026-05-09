@@ -70,8 +70,7 @@ logging_first_step: true  # Log first step
 dataloader_pin_memory: false  # Reduce memory usage
 neftune_noise_alpha: 0  # Disable NEFTune for stability
 
-# Timeout and stability
-dataloader_timeout: 300  # 5 minute timeout for data loading
+# Stability settings
 max_grad_norm: 1.0  # Gradient clipping
 
 # Export
