@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import copy
+import os
 import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Optional
@@ -28,6 +29,12 @@ from transformers import DataCollatorForSeq2Seq
 
 from ..extras.constants import AUDIO_PLACEHOLDER, IGNORE_INDEX, IMAGE_PLACEHOLDER, MROPE_MODELS
 from ..extras.packages import is_pillow_available
+
+try:
+    from transformers.integrations import is_deepspeed_zero3_enabled
+except Exception:  # pragma: no cover
+    def is_deepspeed_zero3_enabled() -> bool:  # type: ignore
+        return False
 
 
 if is_pillow_available():
@@ -345,8 +352,15 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
         fake_input_ids = []
         has_dummy_image = False
+        # Only inject dummy multimodal inputs for ZeRO3/FSDP scenarios to avoid hangs.
+        # For regular single-process training, this can trigger unintended vision/audio forward paths.
+        needs_dummy_mm = is_deepspeed_zero3_enabled() or os.environ.get("ACCELERATE_USE_FSDP", "false").lower() == "true"
+
         if (
-            self.template.mm_plugin.image_token is not None and sum(batch_imglens) == 0 and sum(batch_vidlens) == 0
+            needs_dummy_mm
+            and self.template.mm_plugin.image_token is not None
+            and sum(batch_imglens) == 0
+            and sum(batch_vidlens) == 0
         ):  # avoid process hanging in zero3/fsdp case
             fake_messages = [{"role": "user", "content": IMAGE_PLACEHOLDER}]
             fake_images = [Image.new("RGB", (64, 64), (255, 255, 255))]
@@ -362,9 +376,8 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
             batch_imglens[0] = 1
             has_dummy_image = True
 
-        if (
-            self.template.mm_plugin.audio_token is not None and sum(batch_audlens) == 0
-        ):  # avoid process hanging in zero3/fsdp case
+        if needs_dummy_mm and (self.template.mm_plugin.audio_token is not None and sum(batch_audlens) == 0):
+            # avoid process hanging in zero3/fsdp case
             fake_messages = [{"role": "user", "content": AUDIO_PLACEHOLDER}]
             fake_audios = [np.zeros(1600)]
             fake_messages = self.template.mm_plugin.process_messages(
