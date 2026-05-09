@@ -7,10 +7,11 @@ template: qwen2_omni
 # STT Mode - Thinker only (audio encoder -> LLM)
 train_tts: false  # Important: Only thinker is loaded
 
-# Dataset - Back to streaming to save disk space
+# Dataset - Streaming with training split to control data loading
 dataset: shrutilipi_hindi
-streaming: true  # Re-enabled to save disk space
-buffer_size: 1024  # Small buffer for stability
+streaming: true  # Re-enabled to avoid loading full dataset
+buffer_size: 512  # Small buffer for stability
+dataset_split: train  # Use only train split
 
 # Audio column mapping (audio_filepath contains bytes, not path)
 # Already configured in dataset_info.json:
@@ -34,8 +35,8 @@ per_device_train_batch_size: 1
 gradient_accumulation_steps: 8
 learning_rate: 2.0e-4  # Higher LR for adapter tuning
 num_train_epochs: -1  # Disabled in streaming
-max_steps: 31250  # ~250k samples (250000/8=31250 steps with grad_accum=8)
-max_samples: null  # Use all samples in streaming
+max_steps: 6250  # ~50k samples (50000/8=6250 steps with grad_accum=8)
+max_samples: null  # Use streaming samples
 
 # Sequence length
 cutoff_len: 1024  # Audio transcription doesn't need long context

@@ -47,14 +47,27 @@ def run_sft(
     generating_args: "GeneratingArguments",
     callbacks: Optional[list["TrainerCallback"]] = None,
 ):
+    logger.info_rank0("=== LOADING TOKENIZER ===")
     tokenizer_module = load_tokenizer(model_args)
     tokenizer = tokenizer_module["tokenizer"]
+    logger.info_rank0("Tokenizer loaded successfully")
+    
+    logger.info_rank0("=== GETTING TEMPLATE ===")
     template = get_template_and_fix_tokenizer(tokenizer, data_args)
+    logger.info_rank0("Template loaded successfully")
+    
+    logger.info_rank0("=== LOADING DATASET ===")
+    logger.info_rank0(f"Dataset name: {data_args.dataset}")
+    logger.info_rank0(f"Streaming mode: {data_args.streaming}")
     dataset_module = get_dataset(
         template, model_args, data_args, training_args, stage="sft", 
         train_tts=finetuning_args.train_tts, **tokenizer_module
     )
+    logger.info_rank0("Dataset loaded successfully")
+    
+    logger.info_rank0("=== LOADING MODEL ===")
     model = load_model(tokenizer, model_args, finetuning_args, training_args.do_train)
+    logger.info_rank0("Model loaded successfully")
 
     ref_model = None
     if finetuning_args.use_asft_loss:
@@ -63,6 +76,7 @@ def run_sft(
     if getattr(model, "is_quantized", False) and not training_args.do_train:
         setattr(model, "_hf_peft_config_loaded", True)  # hack here: make model compatible with prediction
 
+    logger.info_rank0("=== CREATING DATA COLLATOR ===")
     data_collator = SFTDataCollatorWith4DAttentionMask(
         template=template,
         model=model if not training_args.predict_with_generate else None,
@@ -74,6 +88,7 @@ def run_sft(
         compute_dtype=model_args.compute_dtype,
         **tokenizer_module,
     )
+    logger.info_rank0("Data collator created successfully")
 
     # Metric utils
     metric_module = {}
@@ -107,8 +122,10 @@ def run_sft(
     gen_kwargs["pad_token_id"] = tokenizer.pad_token_id
 
     # Initialize our Trainer
+    logger.info_rank0("=== INITIALIZING TRAINER ===")
     if finetuning_args.train_tts:
         logger.info_rank0("Using TTSTrainer for audio codec generation training")
+        logger.info_rank0("Creating TTSTrainer...")
         trainer = TTSTrainer(
             model=model,
             args=training_args,
@@ -118,6 +135,8 @@ def run_sft(
             **tokenizer_module,
         )
     else:
+        logger.info_rank0("Using CustomSeq2SeqTrainer for SFT training")
+        logger.info_rank0("Creating CustomSeq2SeqTrainer...")
         trainer = CustomSeq2SeqTrainer(
             model=model,
             args=training_args,
@@ -130,10 +149,19 @@ def run_sft(
             **tokenizer_module,
             **metric_module,
         )
+        logger.info_rank0("Trainer created successfully!")
 
     # Training
     if training_args.do_train:
+        logger.info_rank0("=== STARTING TRAINING ===")
+        logger.info_rank0(f"Model: {model_args.model_name_or_path}")
+        logger.info_rank0(f"Dataset: {data_args.dataset}")
+        logger.info_rank0(f"Streaming: {data_args.streaming}")
+        logger.info_rank0(f"Batch size: {training_args.per_device_train_batch_size}")
+        logger.info_rank0(f"Grad accumulation: {training_args.gradient_accumulation_steps}")
+        logger.info_rank0("=== INITIALIZING TRAINER.TRAIN() ===")
         train_result = trainer.train(resume_from_checkpoint=training_args.resume_from_checkpoint)
+        logger.info_rank0("=== TRAINING COMPLETED ===")
         trainer.save_model()
         if finetuning_args.include_effective_tokens_per_second:
             train_result.metrics["effective_tokens_per_sec"] = calculate_tps(
