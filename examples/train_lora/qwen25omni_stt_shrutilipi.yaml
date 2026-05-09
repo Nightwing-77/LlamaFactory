@@ -59,7 +59,6 @@ val_size: 0.0  # No validation split in streaming (or use eval_dataset)
 
 # Saving
 output_dir: saves/qwen25omni-lora-stt-hindi
-logging_steps: 10
 save_steps: 500
 save_strategy: steps
 save_total_limit: 5  # Keep only last 5 checkpoints to save space
