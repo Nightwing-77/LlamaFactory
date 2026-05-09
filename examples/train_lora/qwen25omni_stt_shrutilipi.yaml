@@ -37,7 +37,6 @@ num_train_epochs: -1  # Disabled in streaming
 max_steps: 1000  # Test with 1000 steps first
 max_samples: null  # Use streaming samples
 logging_steps: 1  # Log every step to track progress
-save_steps: 10  # Save every 10 steps for safety
 
 # Sequence length
 cutoff_len: 1024  # Audio transcription doesn't need long context
