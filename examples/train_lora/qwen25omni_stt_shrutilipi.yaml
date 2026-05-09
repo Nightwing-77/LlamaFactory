@@ -53,12 +53,12 @@ cutoff_len: 1024  # Audio transcription doesn't need long context
 lr_scheduler_type: cosine
 warmup_steps: 100  # ~5% of first epoch
 
-# Gradient checkpointing for memory saving
-gradient_checkpointing: true
+# Debug stability (ROCm): start without GC; turn on later
+gradient_checkpointing: false
 
 # Streaming settings
 preprocessing_num_workers: null  # Disabled in streaming mode
-dataloader_num_workers: 2
+dataloader_num_workers: 0
 
 # Evaluation
 val_size: 0.0  # No validation split in streaming (or use eval_dataset)
@@ -85,7 +85,8 @@ max_grad_norm: 1.0  # Gradient clipping
 export_dir: exports/qwen25omni-lora-stt-hindi
 
 # Hardware (AMD MI300X)
-flash_attn: disabled  # FA2 not available on ROCm, use PyTorch native attn
+# Force eager attention first (sdpa can segfault on some ROCm stacks)
+flash_attn: disabled
 use_reentrant_gc: false  # Non-reentrant checkpointing is often more stable with PEFT on ROCm
 # Or if you have ROCm Flash Attention:
 # flash_attn: auto
