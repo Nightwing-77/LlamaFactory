@@ -140,13 +140,40 @@ def _fp32_forward_post_hook(
     return output.to(torch.float32)
 
 
-def prepare_model_for_training(model: "PreTrainedModel", model_args: "ModelArguments") -> None:
+def configure_gradient_checkpointing(model: "PreTrainedModel", model_args: "ModelArguments") -> None:
+    r"""Activate gradient checkpointing on `model` (call before or after PEFT attach as needed).
+
+    Enables checkpointing hooks and disables ``use_cache`` when supported.
+    """
+    if model_args.disable_gradient_checkpointing:
+        return
+
+    if not getattr(model, "supports_gradient_checkpointing", False):
+        logger.warning_rank0("Current model does not support gradient checkpointing.")
+        return
+
+    # use_reentrant=False might increase VRAM usage (have not been empirically verified yet)
+    # According to: https://github.com/huggingface/transformers/issues/28339
+    gradient_checkpointing_enable = partial(_gradient_checkpointing_enable, use_unsloth_gc=model_args.use_unsloth_gc)
+    model.gradient_checkpointing_enable = MethodType(gradient_checkpointing_enable, model)
+    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": model_args.use_reentrant_gc})
+    setattr(model.config, "use_cache", False)  # turn off when gradient checkpointing is enabled
+    logger.info_rank0("Gradient checkpointing enabled.")
+
+
+def prepare_model_for_training(
+    model: "PreTrainedModel",
+    model_args: "ModelArguments",
+    *,
+    skip_gradient_checkpointing: bool = False,
+) -> None:
     r"""Prepare the model before training.
 
     Include:
     (1) cast the layernorm in fp32
     (2) make output embedding layer require grads
-    (3) add the upcasting of the lm_head in fp32.
+    (3) optionally enable gradient checkpointing (may be deferred; see loader)
+    (4) add the upcasting of the lm_head in fp32.
     """
     if model_args.upcast_layernorm:
         logger.info_rank0("Upcasting layernorm weights in float32.")
@@ -161,21 +188,13 @@ def prepare_model_for_training(model: "PreTrainedModel", model_args: "ModelArgum
         model_args.use_reentrant_gc = False
         logger.warning_rank0("You are using fsdp2, `use_reentrant_gc` has been set to False.")
 
-    if not model_args.disable_gradient_checkpointing:
-        if not getattr(model, "supports_gradient_checkpointing", False):
-            logger.warning_rank0("Current model does not support gradient checkpointing.")
-        else:
-            # use_reentrant=False might increase VRAM usage (have not been empirically verified yet)
-            # According to: https://github.com/huggingface/transformers/issues/28339
-            gradient_checkpointing_enable = partial(
-                _gradient_checkpointing_enable, use_unsloth_gc=model_args.use_unsloth_gc
-            )
-            model.gradient_checkpointing_enable = MethodType(gradient_checkpointing_enable, model)
-            model.gradient_checkpointing_enable(
-                gradient_checkpointing_kwargs={"use_reentrant": model_args.use_reentrant_gc}
-            )
-            setattr(model.config, "use_cache", False)  # turn off when gradient checkpointing is enabled
-            logger.info_rank0("Gradient checkpointing enabled.")
+    if skip_gradient_checkpointing:
+        logger.info_rank0(
+            "Gradient checkpointing deferred until after adapter initialization "
+            "(Qwen2.5-Omni thinker + LoRA ROCm/PyTorch stability)."
+        )
+    else:
+        configure_gradient_checkpointing(model, model_args)
 
     if model_args.upcast_lmhead_output:
         output_layer = model.get_output_embeddings()

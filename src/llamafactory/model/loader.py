@@ -31,6 +31,7 @@ from ..extras import logging
 from ..extras.misc import count_parameters, skip_check_imports, try_download_model_from_other_hub
 from ..extras.packages import is_torch_version_greater_than
 from .adapter import init_adapter
+from .model_utils.checkpointing import configure_gradient_checkpointing
 from .model_utils.liger_kernel import apply_liger_kernel
 from .model_utils.misc import register_autoclass
 from .model_utils.mod import convert_pretrained_model_to_mod, load_mod_pretrained_model
@@ -199,11 +200,30 @@ def load_model(
         if model_args.mixture_of_depths == "convert":
             model = convert_pretrained_model_to_mod(model, config, model_args)
 
+    defer_gc_until_after_adapter = (
+        not lazy_load
+        and model is not None
+        and is_trainable
+        and getattr(model.config, "model_type", None) == "qwen2_5_omni_thinker"
+        and finetuning_args.finetuning_type in ["lora", "oft"]
+        and not model_args.disable_gradient_checkpointing
+    )
+
     if not lazy_load:
-        patch_model(model, tokenizer, model_args, is_trainable, add_valuehead)
+        patch_model(
+            model,
+            tokenizer,
+            model_args,
+            is_trainable,
+            add_valuehead,
+            defer_gradient_checkpointing_until_after_adapter=defer_gc_until_after_adapter,
+        )
         register_autoclass(config, model, tokenizer)
 
     model = init_adapter(config, model, model_args, finetuning_args, is_trainable)
+
+    if defer_gc_until_after_adapter:
+        configure_gradient_checkpointing(model, model_args)
 
     if add_valuehead:
         model = AutoModelForCausalLMWithValueHead.from_pretrained(model)

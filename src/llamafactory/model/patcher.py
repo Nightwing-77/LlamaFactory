@@ -379,6 +379,7 @@ def patch_model(
     model_args: "ModelArguments",
     is_trainable: bool,
     add_valuehead: bool,
+    defer_gradient_checkpointing_until_after_adapter: bool = False,
 ) -> None:
     gen_config = model.generation_config  # check and fix generation config
     if not gen_config.do_sample and (
@@ -411,7 +412,9 @@ def patch_model(
         if getattr(model.config, "model_type", None) == "youtu_vl":
             patch_youtu_vl_model(model)
 
-        prepare_model_for_training(model, model_args)
+        prepare_model_for_training(
+            model, model_args, skip_gradient_checkpointing=defer_gradient_checkpointing_until_after_adapter
+        )
         autocast_projector_dtype(model, model_args)
         add_z3_leaf_module(model)
 

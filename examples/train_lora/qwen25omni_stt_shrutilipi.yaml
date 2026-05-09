@@ -21,17 +21,20 @@ buffer_size: 128  # Minimal buffer for stability
 #   audio: audio_filepath  -> maps to audio column
 #   prompt: text          -> maps to text/transcription
 
-# Audio Encoder - Trainable for Hindi adaptation
-freeze_audio_encoder: false  # Unfreeze audio encoder for Hindi adaptation
+# Audio path: allow LoRA on audio_tower (freeze_vision_tower=false). freeze_audio_encoder only applies in TTS full-model mode.
+freeze_vision_tower: false
+freeze_audio_encoder: false
 
-# LoRA for LLM backbone
+# LoRA — very high rank (e.g. 512) can OOM or crash native code during PEFT attach; start moderate and increase if stable
 finetuning_type: lora
 lora_target: all
-# LoRA - High rank for better STT adaptation
-lora_rank: 512
-lora_alpha: 1024
-lora_dropout: 0.0505
-use_rslora: true  # Use rank-stabilized LoRA for better stability
+lora_rank: 128
+lora_alpha: 256
+lora_dropout: 0.05
+use_rslora: true
+
+# Keep adapter weights in bf16 (often more stable on ROCm than default fp32-upcast for LoRA)
+pure_bf16: true
 
 # Training
 bf16: true  # Recommended on MI300X / ROCm (avoids fp32-only path warnings)
@@ -83,6 +86,7 @@ export_dir: exports/qwen25omni-lora-stt-hindi
 
 # Hardware (AMD MI300X)
 flash_attn: disabled  # FA2 not available on ROCm, use PyTorch native attn
+use_reentrant_gc: false  # Non-reentrant checkpointing is often more stable with PEFT on ROCm
 # Or if you have ROCm Flash Attention:
 # flash_attn: auto
 
