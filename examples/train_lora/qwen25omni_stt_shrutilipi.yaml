@@ -21,11 +21,11 @@ buffer_size: 128  # Minimal buffer for stability
 #   audio: audio_filepath  -> maps to audio column
 #   prompt: text          -> maps to text/transcription
 
-# Audio path: allow LoRA on audio_tower (freeze_vision_tower=false). freeze_audio_encoder only applies in TTS full-model mode.
+# Audio path for Hindi STT: unfreeze multimodal backbone so LoRA can touch audio encoder (freeze_vision_tower=false).
+# freeze_audio_encoder is only wired for full Omni + TTS; use freeze_vision_tower here.
 freeze_vision_tower: false
-freeze_audio_encoder: false
 
-# LoRA — very high rank (e.g. 512) can OOM or crash native code during PEFT attach; start moderate and increase if stable
+# LoRA — high rank stresses PEFT/ROCm during inject; raise only once stable.
 finetuning_type: lora
 lora_target: all
 lora_rank: 128
@@ -99,5 +99,5 @@ use_reentrant_gc: false  # Non-reentrant checkpointing is often more stable with
 # - Text from 'text' column is the transcription target
 # - Streaming mode allows training on full 50GB+ dataset without downloading
 
-# Single GPU settings (no DeepSpeed)
-low_cpu_mem_usage: true
+# Single GPU — on ROCm, prefer false for Omni+LoRA (loader also auto-fixes HIP); avoids PEFT injection SIGSEGVs.
+low_cpu_mem_usage: false

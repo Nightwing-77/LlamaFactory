@@ -254,7 +254,8 @@ def _setup_lora_tuning(
                 raise ValueError("KTransformers only supports LoRA finetuning.")
 
             peft_config = LoraConfig(task_type=TaskType.CAUSAL_LM, inference_mode=False, **peft_kwargs)
-            model = get_peft_model(model, peft_config)
+            # PEFT default is False; keep explicit: meta/low_cpu base loads differ from transformers `from_pretrained`.
+            model = get_peft_model(model, peft_config, low_cpu_mem_usage=False)
         elif model_args.use_unsloth:
             if finetuning_args.finetuning_type == "oft":
                 raise ValueError("Unsloth is currently not supported for OFT.")
@@ -281,7 +282,7 @@ def _setup_lora_tuning(
                     inference_mode=False,
                     **peft_kwargs,
                 )
-            model = get_peft_model(model, peft_config)
+            model = get_peft_model(model, peft_config, low_cpu_mem_usage=False)
 
     if is_trainable and cast_trainable_params_to_fp32:
         for param in filter(lambda p: p.requires_grad, model.parameters()):

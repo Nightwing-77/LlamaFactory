@@ -140,6 +140,24 @@ def load_model(
     init_kwargs = _get_init_kwargs(model_args)
     config = load_config(model_args)
     patch_config(config, tokenizer, model_args, init_kwargs, is_trainable)
+
+    # ROCm: low_cpu_mem_usage + from_pretrained(meta) tensors then PEFT module replacement segfaults in some setups.
+    if (
+        is_trainable
+        and finetuning_args.finetuning_type in ["lora", "oft"]
+        and getattr(torch.version, "hip", None) is not None
+        and getattr(config, "model_type", None) in ["qwen2_5_omni", "qwen3_omni_moe"]
+        and init_kwargs.get("low_cpu_mem_usage", False)
+        and os.environ.get("LLAMAFACTORY_KEEP_LOW_CPU_USAGE_ON_ROCM", "").lower() not in ("1", "true", "yes")
+    ):
+        logger.warning_rank0(
+            "ROCm + Qwen Omni + LoRA: forcing `low_cpu_mem_usage=False` for weight load (PEFT inject can SIGSEGV "
+            "with meta/low-CPU load). Set LLAMAFACTORY_KEEP_LOW_CPU_USAGE_ON_ROCM=1 to override."
+        )
+        init_kwargs["low_cpu_mem_usage"] = False
+        init_kwargs.pop("device_map", None)
+        init_kwargs.pop("offload_folder", None)
+
     apply_liger_kernel(config, model_args, is_trainable, require_logits=(finetuning_args.stage not in ["pt", "sft"]))
 
     model = None

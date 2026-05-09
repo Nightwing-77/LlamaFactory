@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 import torch
+import torch.nn as nn
 import transformers
 import transformers.models
 from transformers.activations import ACT2FN
@@ -202,6 +203,20 @@ def _target_matches_module_path(module_path: str, target: str) -> bool:
     return bool(module_path and target and target in module_path.split("."))
 
 
+def _module_type_supported_for_lora_peft(module: "torch.nn.Module") -> bool:
+    r"""PEFT rejects unsupported classes during inject; ROCm stacks may segfault rather than raising."""
+
+    if isinstance(module, (nn.Linear, nn.Embedding, nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+        return True
+
+    try:
+        from transformers.pytorch_utils import Conv1D
+
+        return isinstance(module, Conv1D)
+    except ImportError:
+        return False
+
+
 def patch_target_modules(
     model: "PreTrainedModel", finetuning_args: "FinetuningArguments", target_modules: list[str]
 ) -> list[str]:
@@ -211,11 +226,14 @@ def patch_target_modules(
         forbidden_modules = get_forbidden_modules(model.config, finetuning_args)
         forbidden_modules.update(COMPOSITE_MODELS[model_type].lora_conflict_keys)
         module_names = []
-        for name, _ in model.named_modules():
+        for name, module in model.named_modules():
             if not any(_target_matches_module_path(name, t) for t in target_modules):
                 continue
 
             if any(forbidden_module in name for forbidden_module in forbidden_modules):
+                continue
+
+            if not _module_type_supported_for_lora_peft(module):
                 continue
 
             module_names.append(name)

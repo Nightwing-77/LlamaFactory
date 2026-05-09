@@ -179,7 +179,7 @@ def get_lora_model(model: HFModel, config: LoraConfigDict, is_train: bool = Fals
         modules_to_save=config.get("modules_to_save", None),
     )
 
-    model = get_peft_model(model, peft_config)
+    model = get_peft_model(model, peft_config, low_cpu_mem_usage=False)
 
     if is_train:
         model.print_trainable_parameters()
