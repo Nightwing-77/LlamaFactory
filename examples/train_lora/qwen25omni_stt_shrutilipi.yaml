@@ -10,7 +10,7 @@ train_tts: false  # Important: Only thinker is loaded
 # Dataset - Back to streaming to save disk space
 dataset: shrutilipi_hindi
 streaming: true  # Re-enabled to save disk space
-buffer_size: 4096  # Moderate buffer for streaming
+buffer_size: 1024  # Small buffer for stability
 
 # Audio column mapping (audio_filepath contains bytes, not path)
 # Already configured in dataset_info.json:
@@ -65,13 +65,18 @@ plot_loss: true
 report_to: wandb  # Optional: track training
 
 # Debugging and logging
-log_level: info  # Reduce verbosity
+log_level: debug  # Maximum verbosity for debugging
 logging_first_step: true  # Log first step
 dataloader_pin_memory: false  # Reduce memory usage
 neftune_noise_alpha: 0  # Disable NEFTune for stability
 
 # Stability settings
 max_grad_norm: 1.0  # Gradient clipping
+
+# Additional debugging
+include_inputs_for_metrics: true  # Include inputs in metrics
+include_num_input_tokens_seen: true  # Track tokens processed
+ddp_timeout: 1800  # 30 min timeout for distributed
 
 # Export
 export_dir: exports/qwen25omni-lora-stt-hindi
