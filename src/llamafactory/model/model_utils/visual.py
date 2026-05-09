@@ -193,6 +193,15 @@ def get_forbidden_modules(config: "PretrainedConfig", finetuning_args: "Finetuni
     return forbidden_modules
 
 
+def _target_matches_module_path(module_path: str, target: str) -> bool:
+    r"""Whether ``target`` should apply LoRA under ``module_path``.
+
+    Matching is by **whole path segment** so short names like ``k`` / ``v`` do not wrongly match
+    ``thinker``, ``visual``, etc. Substring semantics (``target in module_path``) break PEFT/VLM stacks.
+    """
+    return bool(module_path and target and target in module_path.split("."))
+
+
 def patch_target_modules(
     model: "PreTrainedModel", finetuning_args: "FinetuningArguments", target_modules: list[str]
 ) -> list[str]:
@@ -203,10 +212,13 @@ def patch_target_modules(
         forbidden_modules.update(COMPOSITE_MODELS[model_type].lora_conflict_keys)
         module_names = []
         for name, _ in model.named_modules():
-            if any(target_module in name for target_module in target_modules) and not any(
-                forbidden_module in name for forbidden_module in forbidden_modules
-            ):
-                module_names.append(name)
+            if not any(_target_matches_module_path(name, t) for t in target_modules):
+                continue
+
+            if any(forbidden_module in name for forbidden_module in forbidden_modules):
+                continue
+
+            module_names.append(name)
 
         return module_names
     else:
