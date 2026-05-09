@@ -316,6 +316,16 @@ class MMPluginMixin:
         - Audio bytes (dict with 'bytes' key from HuggingFace datasets)
         - numpy arrays
         """
+        # NOTE: torchaudio.load relies on backend codecs (sox/ffmpeg) and may SIGSEGV on some ROCm stacks.
+        # Prefer soundfile when available for byte decoding so failures surface as Python exceptions.
+        try:
+            import soundfile as sf  # type: ignore
+
+            _has_soundfile = True
+        except Exception:
+            sf = None
+            _has_soundfile = False
+
         results, sampling_rates = [], []
         for audio in audios:
             if isinstance(audio, np.ndarray):
@@ -342,28 +352,51 @@ class MMPluginMixin:
                     raise ValueError(f"Dict audio has no 'bytes' or 'array' key. Keys: {list(audio.keys())}")
                 
                 audio_buffer = io.BytesIO(audio_bytes)
-                audio_tensor, sr = torchaudio.load(audio_buffer)
-                if audio_tensor.shape[0] > 1:
-                    audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
-                
-                if sr != sampling_rate:
-                    audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
-                
-                audio_np = audio_tensor.squeeze(0).numpy()
+                if _has_soundfile:
+                    # sf.read returns shape (frames,) or (frames, channels)
+                    data, sr = sf.read(audio_buffer, dtype="float32", always_2d=True)  # type: ignore[attr-defined]
+                    audio_np = data.mean(axis=1)  # to mono
+                    if sr != sampling_rate:
+                        audio_tensor = torch.from_numpy(audio_np).unsqueeze(0)
+                        audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
+                        audio_np = audio_tensor.squeeze(0).numpy()
+                        sr = sampling_rate
+                else:
+                    audio_tensor, sr = torchaudio.load(audio_buffer)
+                    if audio_tensor.shape[0] > 1:
+                        audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
+
+                    if sr != sampling_rate:
+                        audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
+                        sr = sampling_rate
+
+                    audio_np = audio_tensor.squeeze(0).numpy()
+
                 results.append(audio_np)
-                sampling_rates.append(sampling_rate)
+                sampling_rates.append(sr)
             elif isinstance(audio, (str, os.PathLike)):
                 # File path
-                audio_tensor, sr = torchaudio.load(audio)
-                if audio_tensor.shape[0] > 1:
-                    audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
+                if _has_soundfile:
+                    data, sr = sf.read(str(audio), dtype="float32", always_2d=True)  # type: ignore[attr-defined]
+                    audio_np = data.mean(axis=1)
+                    if sr != sampling_rate:
+                        audio_tensor = torch.from_numpy(audio_np).unsqueeze(0)
+                        audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
+                        audio_np = audio_tensor.squeeze(0).numpy()
+                        sr = sampling_rate
+                else:
+                    audio_tensor, sr = torchaudio.load(audio)
+                    if audio_tensor.shape[0] > 1:
+                        audio_tensor = audio_tensor.mean(dim=0, keepdim=True)
 
-                if sr != sampling_rate:
-                    audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
+                    if sr != sampling_rate:
+                        audio_tensor = torchaudio.functional.resample(audio_tensor, sr, sampling_rate)
+                        sr = sampling_rate
 
-                audio_np = audio_tensor.squeeze(0).numpy()
+                    audio_np = audio_tensor.squeeze(0).numpy()
+
                 results.append(audio_np)
-                sampling_rates.append(sampling_rate)
+                sampling_rates.append(sr)
             else:
                 raise ValueError(f"Unsupported audio type: {type(audio)}")
 
