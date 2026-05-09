@@ -160,7 +160,12 @@ def run_sft(
         logger.info_rank0(f"Train dataset size: {len(dataset_module.get('train_dataset', []))}")
         logger.info_rank0("=== INITIALIZING TRAINER.TRAIN() ===")
         logger.info_rank0("Calling trainer.train() now...")
+        logger.info_rank0(f"Trainer type: {type(trainer)}")
+        logger.info_rank0(f"Training args: {training_args}")
+        logger.info_rank0(f"Resume from checkpoint: {training_args.resume_from_checkpoint}")
+        logger.info_rank0("=== STARTING TRAINER.TRAIN() METHOD ===")
         train_result = trainer.train(resume_from_checkpoint=training_args.resume_from_checkpoint)
+        logger.info_rank0("=== TRAINER.TRAIN() COMPLETED ===")
         logger.info_rank0("=== TRAINING COMPLETED ===")
         trainer.save_model()
         if finetuning_args.include_effective_tokens_per_second:
