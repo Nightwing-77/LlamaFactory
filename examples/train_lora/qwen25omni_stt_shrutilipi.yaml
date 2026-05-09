@@ -28,8 +28,8 @@ freeze_vision_tower: true
 # LoRA — high rank stresses PEFT/ROCm during inject; raise only once stable.
 finetuning_type: lora
 lora_target: q_proj, v_proj, k_proj, o_proj
-lora_rank: 32
-lora_alpha: 64
+lora_rank: 16
+lora_alpha: 32
 lora_dropout: 0.03
 use_rslora: true
 
@@ -65,8 +65,11 @@ val_size: 0.0  # No validation split in streaming (or use eval_dataset)
 # eval_dataset: eval_set  # If you have a separate eval dataset
 
 # Saving
-output_dir: saves/qwen25omni-stt-hindi-v2
-overwrite_output_dir: True
+output_dir: saves/qwen25omni_hindi_stt_new
+# This prevents it from trying to resume from a deleted folder
+overwrite_output_dir: true 
+# Set this to false so it doesn't try to find a saved state
+resume_from_checkpoint: null
 ignore_data_skip: true  # Resume from checkpoint without long dataloader fast-forward.
 save_steps: 2000
 save_strategy: steps
