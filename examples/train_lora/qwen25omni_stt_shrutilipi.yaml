@@ -79,12 +79,13 @@ flash_attn: disabled  # FA2 not available on ROCm, use PyTorch native attn
 # flash_attn: auto
 
 # GPU Settings
-deepspeed: examples/deepspeed/ds_z2_offload_config.json  # Use DeepSpeed for better GPU util
 # Or for single GPU without DeepSpeed:
-# device_map: auto
 # low_cpu_mem_usage: true
 
 # Note: 
 # - Audio bytes from 'audio_filepath' column are processed directly
 # - Text from 'text' column is the transcription target
 # - Streaming mode allows training on full 50GB+ dataset without downloading
+
+# Single GPU settings (no DeepSpeed)
+low_cpu_mem_usage: true
