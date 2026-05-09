@@ -142,7 +142,6 @@ def run_sft(
             args=training_args,
             data_collator=data_collator,
             callbacks=callbacks,
-            ref_model=ref_model,
             **dataset_module,
             **tokenizer_module,
             **metric_module,
