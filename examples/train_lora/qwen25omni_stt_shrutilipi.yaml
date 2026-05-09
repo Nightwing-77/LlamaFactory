@@ -11,10 +11,10 @@ template: qwen2_omni
 # STT Mode - Thinker only (audio encoder -> LLM)
 train_tts: false  # Important: Only thinker is loaded
 
-# Dataset - Streaming with minimal buffer
+# Dataset - full epoch over full dataset (non-streaming)
 dataset: shrutilipi_hindi
-streaming: true  # Re-enabled to avoid loading full dataset
-buffer_size: 128  # Minimal buffer for stability
+streaming: false
+# buffer_size only applies to streaming
 
 # Audio column mapping (audio_filepath contains bytes, not path)
 # Already configured in dataset_info.json:
@@ -41,9 +41,9 @@ bf16: true  # Recommended on MI300X / ROCm (avoids fp32-only path warnings)
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 8
 learning_rate: 2.0e-4  # Higher LR for adapter tuning
-num_train_epochs: -1  # Disabled in streaming
-max_steps: 1000  # Test with 1000 steps first
-max_samples: null  # Use streaming samples
+num_train_epochs: 1.0
+max_steps: -1
+max_samples: null
 logging_steps: 1  # Log every step to track progress
 
 # Sequence length
@@ -56,9 +56,9 @@ warmup_steps: 100  # ~5% of first epoch
 # Debug stability (ROCm): start without GC; turn on later
 gradient_checkpointing: false
 
-# Streaming settings
-preprocessing_num_workers: null  # Disabled in streaming mode
-dataloader_num_workers: 0
+# Data loading settings
+preprocessing_num_workers: 8
+dataloader_num_workers: 2
 
 # Evaluation
 val_size: 0.0  # No validation split in streaming (or use eval_dataset)
