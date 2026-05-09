@@ -50,6 +50,7 @@ def run_sft(
     logger.info_rank0("=== LOADING TOKENIZER ===")
     tokenizer_module = load_tokenizer(model_args)
     tokenizer = tokenizer_module["tokenizer"]
+    processor = tokenizer_module.get("processor")
     logger.info_rank0("Tokenizer loaded successfully")
     
     logger.info_rank0("=== GETTING TEMPLATE ===")
@@ -77,9 +78,16 @@ def run_sft(
         setattr(model, "_hf_peft_config_loaded", True)  # hack here: make model compatible with prediction
 
     logger.info_rank0("=== CREATING DATA COLLATOR ===")
+    if template.mm_plugin.audio_token is not None and processor is None:
+        raise ValueError(
+            "This multimodal/audio template requires a processor, but none was loaded. "
+            "Check `model_name_or_path` and ensure `AutoProcessor.from_pretrained(...)` works."
+        )
+
     data_collator = SFTDataCollatorWith4DAttentionMask(
         template=template,
         model=model if not training_args.predict_with_generate else None,
+        processor=processor,
         pad_to_multiple_of=8 if training_args.do_train else None,  # for shift short attention
         label_pad_token_id=IGNORE_INDEX if data_args.ignore_pad_token_for_loss else tokenizer.pad_token_id,
         block_diag_attn=model_args.block_diag_attn,
