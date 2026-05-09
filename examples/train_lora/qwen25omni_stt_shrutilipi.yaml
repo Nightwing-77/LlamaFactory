@@ -73,10 +73,6 @@ neftune_noise_alpha: 0  # Disable NEFTune for stability
 # Stability settings
 max_grad_norm: 1.0  # Gradient clipping
 
-# Timeout and progress tracking
-save_on_each_epoch: true  # Save after each epoch
-evaluation_strategy: "no"  # Skip evaluation to prevent hanging
-
 # Export
 export_dir: exports/qwen25omni-lora-stt-hindi
 
