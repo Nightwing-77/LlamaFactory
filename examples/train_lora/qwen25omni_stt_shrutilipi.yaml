@@ -58,7 +58,7 @@ gradient_checkpointing: false
 
 # Streaming settings
 preprocessing_num_workers: null
-dataloader_num_workers: 4
+dataloader_num_workers: 8  # Increase from 4 to 8 or 16
 
 # Evaluation
 val_size: 0.0  # No validation split in streaming (or use eval_dataset)
@@ -69,7 +69,7 @@ output_dir: saves/qwen25omni_hindi_stt_new
 # This prevents it from trying to resume from a deleted folder
 overwrite_output_dir: true 
 # Set this to false so it doesn't try to find a saved state
-resume_from_checkpoint: null
+resume_from_checkpoint: true
 ignore_data_skip: true  # Resume from checkpoint without long dataloader fast-forward.
 save_steps: 2000
 save_strategy: steps
