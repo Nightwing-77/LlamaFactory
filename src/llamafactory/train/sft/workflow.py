@@ -17,6 +17,7 @@
 
 from typing import TYPE_CHECKING, Optional
 
+from transformers import Seq2SeqTrainer
 from ...data import SFTDataCollatorWith4DAttentionMask, get_dataset, get_template_and_fix_tokenizer
 from ...extras.constants import IGNORE_INDEX
 from ...extras.logging import get_logger
