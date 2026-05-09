@@ -2,10 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+generate_lahaja.py
 # C extensions
 *.so
-
+lahaja_audio
 # Distribution / packaging
 .Python
 build/
