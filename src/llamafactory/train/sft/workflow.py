@@ -86,7 +86,8 @@ def run_sft(
         neat_packing=data_args.neat_packing,
         attn_implementation=getattr(model.config, "_attn_implementation", None),
         compute_dtype=model_args.compute_dtype,
-        **{k: v for k, v in tokenizer_module.items() if k != "tokenizer"},
+        tokenizer=tokenizer,
+        **{k: v for k, v in tokenizer_module.items() if k not in ["tokenizer", "processor"]},
     )
     logger.info_rank0("Data collator created successfully")
 
