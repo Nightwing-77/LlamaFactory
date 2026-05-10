@@ -45,7 +45,7 @@ class TTSTrainer(Trainer):
     
     def __init__(self, **kwargs):
         # Disable NEFTune - it doesn't work with Qwen2.5-Omni's architecture
-        kwargs['neftune_noise_alpha'] = None
+        kwargs.pop('neftune_noise_alpha', None)
         super().__init__(**kwargs)
         self.tts_loss_weight = 1.0
         self.text_loss_weight = 0.0  # We don't train on text for TTS
