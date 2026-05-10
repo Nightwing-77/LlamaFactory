@@ -68,7 +68,7 @@ class TTSTrainer(Seq2SeqTrainer):
         
         # Forward pass through thinker for standard outputs
         thinker = getattr(base_model, 'thinker', base_model)
-        outputs = thinker(**inputs)
+        outputs = thinker(**inputs, output_hidden_states=True)
         
         # Get model type
         model_type = getattr(model.config, "model_type", None)
@@ -113,24 +113,28 @@ class TTSTrainer(Seq2SeqTrainer):
             return None
         
         # Get thinker hidden states - these are what we train
-        # For Qwen2.5-Omni, the thinker generates text/audio representations
+        # For Qwen2.5-Omni, the thinker outputs don't include hidden_states by default
+        # We need to access them directly from the thinker model
         
-        # Debug: Log outputs structure
-        logger.info_once(f"Thinker outputs type: {type(outputs)}")
-        logger.info_once(f"Thinker outputs keys: {outputs.keys() if hasattr(outputs, 'keys') else 'N/A'}")
-        if hasattr(outputs, 'hidden_states'):
-            logger.info_once(f"hidden_states type: {type(outputs.hidden_states)}, value: {outputs.hidden_states}")
-        if hasattr(outputs, 'last_hidden_state'):
-            logger.info_once(f"last_hidden_state shape: {outputs.last_hidden_state.shape}")
+        # Get base model (handle PEFT wrapper)
+        base_model = model
+        if hasattr(model, 'base_model') and hasattr(model.base_model, 'model'):
+            base_model = model.base_model.model
         
-        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
-            hidden_states = outputs.hidden_states[-1]
-        elif hasattr(outputs, "last_hidden_state"):
-            hidden_states = outputs.last_hidden_state
-        elif isinstance(outputs, (list, tuple)) and len(outputs) > 0:
-            hidden_states = outputs[0]
+        # Access hidden states from the thinker directly
+        thinker = getattr(base_model, 'thinker', None)
+        if thinker is None:
+            logger.warning_once("Could not access thinker model")
+            return None
+        
+        # Get the last hidden state from the thinker's internal layers
+        # This should be available if we run forward with output_hidden_states=True
+        if hasattr(thinker, 'model') and hasattr(thinker.model, 'layers'):
+            # For now, we'll use a simpler approach - compute loss directly on logits
+            # The thinker's logits should contain representations we can use
+            hidden_states = outputs.logits  # [batch, seq_len, vocab_size]
         else:
-            logger.warning_once("Could not extract hidden states from model outputs")
+            logger.warning_once("Could not extract hidden states from thinker")
             return None
         
         # Get codec predictions from talker.codec_head
