@@ -114,7 +114,15 @@ class TTSTrainer(Seq2SeqTrainer):
         
         # Get thinker hidden states - these are what we train
         # For Qwen2.5-Omni, the thinker generates text/audio representations
-        hidden_states = outputs.hidden_states[-1] if hasattr(outputs, "hidden_states") else outputs[0]
+        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
+            hidden_states = outputs.hidden_states[-1]
+        elif hasattr(outputs, "last_hidden_state"):
+            hidden_states = outputs.last_hidden_state
+        elif isinstance(outputs, (list, tuple)) and len(outputs) > 0:
+            hidden_states = outputs[0]
+        else:
+            logger.warning_once("Could not extract hidden states from model outputs")
+            return None
         
         # Get codec predictions from talker.codec_head
         # codec_head projects hidden states to codec vocabulary
