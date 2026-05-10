@@ -60,6 +60,7 @@ ddp_find_unused_parameters: false
 ddp_backend: nccl
 fsdp: null
 fsdp_config: null
+max_grad_norm: 1.0
 
 # ==========================================
 # Mixed Precision
@@ -74,6 +75,11 @@ tf32: false
 use_rslora: true
 pissa: false
 dora: false
+
+# ==========================================
+# Export
+# ==========================================
+export_dir: exports/qwen3omni-lora-stt-lahaja
 
 # ==========================================
 # Report to
@@ -91,3 +97,5 @@ ddp_bucket_cap_mb: 25
 ddp_broadcast_buffers: false
 local_rank: -1
 deepspeed: null
+low_cpu_mem_usage: true
+use_reentrant_gc: false
