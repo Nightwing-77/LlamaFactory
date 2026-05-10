@@ -44,7 +44,7 @@ use_rslora: true           # Rank-stabilized LoRA for better stability
 # ==========================================
 dataset: hindi_tts_speakers  # Your dataset name from dataset_info.json
 cutoff_len: 2048
-max_samples: 100000
+max_samples: 10000
 overwrite_cache: true
 preprocessing_num_workers: 4
 
@@ -53,10 +53,10 @@ preprocessing_num_workers: 4
 # ==========================================
 output_dir: saves/qwen25omni-7b/lora/tts-hindi-speakers
 overwrite_output_dir: true
-per_device_train_batch_size: 1
-gradient_accumulation_steps: 8
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 4
 learning_rate: 5.0e-5       # Slightly higher for TTS adaptation
-num_train_epochs: 5.0       # More epochs for voice learning
+num_train_epochs: 50.0       # More epochs for voice learning
 max_steps: -1
 lr_scheduler_type: cosine
 warmup_ratio: 0.1
@@ -65,7 +65,7 @@ bf16: true
 # ==========================================
 # Optimization & Memory
 # ==========================================
-flash_attn: fa2
+flash_attn: disabled
 gradient_checkpointing: true
 
 # ==========================================
