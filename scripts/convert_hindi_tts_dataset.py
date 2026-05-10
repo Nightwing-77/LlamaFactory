@@ -128,6 +128,7 @@ def main():
             # Create ShareGPT format entry
             entry = {
                 "conversations": [
+                    {"from": "system", "value": "You are Qwen, a virtual human developed by Qwen Team, Alibaba Group, capable of perceiving auditory and visual inputs, as well as generating text and speech."},
                     {"from": "human", "value": args.prompt_template.format(speaker=speaker, text=text)},
                     {"from": "gpt", "value": f"<|spk_start|>{speaker}<|spk_end|><|audio|>"}
                 ],
