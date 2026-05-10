@@ -50,7 +50,6 @@ warmup_ratio: 0.1
 eval_steps: 500
 save_steps: 500
 save_strategy: steps
-evaluation_strategy: no
 save_total_limit: 3
 logging_steps: 10
 
@@ -71,8 +70,7 @@ tf32: false
 # ==========================================
 # LoRA Specific
 # ==========================================
-pissa: false
-dora: false
+# pissa and dora are not used
 
 # ==========================================
 # Export
