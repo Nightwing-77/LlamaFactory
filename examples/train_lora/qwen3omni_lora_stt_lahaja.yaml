@@ -71,7 +71,6 @@ tf32: false
 # ==========================================
 # LoRA Specific
 # ==========================================
-use_rslora: true
 pissa: false
 dora: false
 
