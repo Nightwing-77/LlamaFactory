@@ -114,6 +114,15 @@ class TTSTrainer(Seq2SeqTrainer):
         
         # Get thinker hidden states - these are what we train
         # For Qwen2.5-Omni, the thinker generates text/audio representations
+        
+        # Debug: Log outputs structure
+        logger.info_once(f"Thinker outputs type: {type(outputs)}")
+        logger.info_once(f"Thinker outputs keys: {outputs.keys() if hasattr(outputs, 'keys') else 'N/A'}")
+        if hasattr(outputs, 'hidden_states'):
+            logger.info_once(f"hidden_states type: {type(outputs.hidden_states)}, value: {outputs.hidden_states}")
+        if hasattr(outputs, 'last_hidden_state'):
+            logger.info_once(f"last_hidden_state shape: {outputs.last_hidden_state.shape}")
+        
         if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
             hidden_states = outputs.hidden_states[-1]
         elif hasattr(outputs, "last_hidden_state"):
