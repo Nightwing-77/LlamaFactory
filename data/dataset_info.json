@@ -1,4 +1,18 @@
 {
+  "hindi_tts_speakers": {
+    "file_name": "hindi_tts_speakers.json",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "audio_codes": "audio_codes"
+    },
+    "tags": {
+      "role_tag": "from",
+      "content_tag": "value",
+      "user_tag": "human",
+      "assistant_tag": "gpt"
+    }
+  },
   "identity": {
     "file_name": "identity.json"
   },

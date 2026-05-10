@@ -1,0 +1,127 @@
+# Copyright 2025 the LlamaFactory team.
+#
+# examples/train_lora/qwen25omni_lora_tts_hindi.yaml
+#
+# TTS (Text-to-Speech) Training Configuration for Qwen2.5-Omni - Hindi with Multiple Speakers
+# 
+# This config trains the Thinker to output audio codec tokens for Hindi TTS with speaker conditioning.
+# The Mimi codec is used ONLY to extract target audio codes from ground truth audio.
+# Audio encoder and code2wav decoder are FROZEN - we don't train them.
+#
+# Speaker format: <|spk_start|>{speaker_name}<|spk_end|><|audio|>
+# Example: <|spk_start|>kavya<|spk_end|><|audio|>
+#
+# Usage:
+#   llamafactory-cli train examples/train_lora/qwen25omni_lora_tts_hindi.yaml
+
+### run
+stage: sft
+do_train: true
+
+model_name_or_path: Qwen/Qwen2.5-Omni-7B
+template: qwen2_omni
+
+# ==========================================
+# TTS Training Mode - Thinker + Talker.codec_head
+# ==========================================
+train_tts: true              # Enable TTS training mode
+freeze_audio_encoder: true  # Frozen - don't train audio understanding
+freeze_codec_head: false    # Trainable - we train the codec head!
+audio_codec_vocab_size: 16000
+
+# ==========================================
+# LoRA Settings for Thinker (LLM backbone)
+# ==========================================
+finetuning_type: lora
+lora_target: all
+lora_rank: 32              # Higher rank for better voice quality
+lora_alpha: 64
+lora_dropout: 0.05
+use_rslora: true           # Rank-stabilized LoRA for better stability
+
+# ==========================================
+# Dataset - Hindi TTS with Speakers (kavya, agastya)
+# ==========================================
+dataset: hindi_tts_speakers  # Your dataset name from dataset_info.json
+cutoff_len: 2048
+max_samples: 100000
+overwrite_cache: true
+preprocessing_num_workers: 4
+
+# ==========================================
+# Training Configuration
+# ==========================================
+output_dir: saves/qwen25omni-7b/lora/tts-hindi-speakers
+overwrite_output_dir: true
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 5.0e-5       # Slightly higher for TTS adaptation
+num_train_epochs: 5.0       # More epochs for voice learning
+max_steps: -1
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+
+# ==========================================
+# Optimization & Memory
+# ==========================================
+flash_attn: fa2
+gradient_checkpointing: true
+
+# ==========================================
+# Logging & Monitoring (WandB + TensorBoard)
+# ==========================================
+logging_steps: 10
+save_steps: 500
+plot_loss: true
+
+# WandB logging (recommended for monitoring)
+report_to: wandb            # Options: wandb, tensorboard, none
+# wandb_project: qwen25-omni-tts-hindi
+# wandb_run_name: kavya-agastya-voices
+# wandb_api_key: your_key_here  # Or set via environment variable
+
+# ==========================================
+# Evaluation & Checkpointing
+# ==========================================
+val_size: 0.05              # 5% validation for monitoring overfitting
+eval_strategy: steps
+eval_steps: 500
+save_total_limit: 3         # Keep last 3 checkpoints
+load_best_model_at_end: true
+metric_for_best_model: eval_loss
+
+# ==========================================
+# Stability Settings
+# ==========================================
+ddp_find_unused_parameters: false
+max_grad_norm: 1.0
+neftune_noise_alpha: 0      # Disable NEFTune for stability
+
+# ==========================================
+# Hardware Settings (AMD MI300X / ROCm)
+# ==========================================
+# Force eager attention first (sdpa can segfault on some ROCm stacks)
+# flash_attn: disabled       # Uncomment if fa2 causes issues
+low_cpu_mem_usage: false
+
+# ==========================================
+# Export
+# ==========================================
+export_dir: exports/qwen25omni-7b-lora-tts-hindi
+
+# ==========================================
+# TTS Training Notes:
+# ==========================================
+# 1. Dataset must have 'audio_codes' column with Mimi codec tokens
+# 2. Model keeps full Qwen2.5-Omni (thinker + talker.codec_head)
+# 3. Audio encoder frozen, codec_head trainable, code2wav frozen
+# 4. Loss computed on codec token predictions vs Mimi targets
+# 5. Speaker tokens <|spk_start|>name<|spk_end|> condition voice generation
+# 6. New speakers (kavya, agastya) are learned during training
+#
+# Monitoring Training:
+# - Watch 'loss' curve in WandB - should steadily decrease
+# - Monitor 'eval_loss' - early stopping if it increases
+# - Check 'grad_norm' - should be stable, not exploding
+# - After 500-1000 steps, voice quality should start emerging
