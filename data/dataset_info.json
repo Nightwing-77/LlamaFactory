@@ -13,6 +13,18 @@
       "assistant_tag": "gpt"
     }
   },
+  "lahaja_tts_speakers": {
+    "file_name": "lahaja_tts_speakers.json",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "audio_codes": "audio_codes"
+    },
+    "tags": [
+      "tts",
+      "lahaja"
+    ]
+  },
   "identity": {
     "file_name": "identity.json"
   },

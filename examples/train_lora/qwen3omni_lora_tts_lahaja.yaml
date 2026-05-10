@@ -1,0 +1,86 @@
+# ==========================================
+# Model Settings
+# ==========================================
+model_name_or_path: Qwen/Qwen3-Omni-30B-A3B-Instruct
+trust_remote_code: true
+
+# ==========================================
+# TTS Settings
+# ==========================================
+train_tts: true               # Enable TTS training
+freeze_audio_encoder: true      # Frozen - don't train
+freeze_codec_head: false       # Trainable - we train this!
+audio_codec_vocab_size: 16000
+
+# LoRA Settings
+finetuning_type: lora
+lora_target: all
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+
+# ==========================================
+# Dataset
+# ==========================================
+dataset: lahaja_tts_speakers     # Lahaja dataset with speakers
+cutoff_len: 2048
+max_samples: 100000
+overwrite_cache: true
+preprocessing_num_workers: 4
+
+# ==========================================
+# Output & Logging
+# ==========================================
+output_dir: saves/qwen3omni-30b/lora/tts-lahaja
+overwrite_output_dir: true
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 5.0e-5       # Learning rate for 30B model
+num_train_epochs: 10.0       # Epochs for voice learning
+max_steps: -1
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+
+# ==========================================
+# Evaluation & Saving
+# ==========================================
+eval_steps: 500
+save_steps: 500
+save_strategy: steps
+evaluation_strategy: no
+save_total_limit: 3
+logging_steps: 10
+
+# ==========================================
+# Optimization & Memory
+# ==========================================
+flash_attn: disabled
+gradient_checkpointing: true
+ddp_find_unused_parameters: false
+ddp_backend: nccl
+
+# ==========================================
+# Mixed Precision
+# ==========================================
+bf16: true
+fp16: false
+tf32: false
+
+# ==========================================
+# LoRA Specific
+# ==========================================
+use_rslora: true
+pissa: false
+dora: false
+
+# ==========================================
+# Report to
+# ==========================================
+report_to: wandb
+run_name: qwen3omni-tts-lahaja
+
+# ==========================================
+# Hardware
+# ==========================================
+n_gpu: 1
+dataloader_pin_memory: true
