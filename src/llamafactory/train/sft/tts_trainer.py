@@ -61,14 +61,8 @@ class TTSTrainer(Seq2SeqTrainer):
         # Extract audio codec targets if present
         audio_code_targets = inputs.pop("audio_code_targets", None)
         
-        # Handle PEFT-wrapped models - need to access base model for Qwen2.5-Omni
-        base_model = model
-        if hasattr(model, 'base_model') and hasattr(model.base_model, 'model'):
-            # For PEFT-wrapped models, use the actual base model
-            base_model = model.base_model.model
-        
-        # Forward pass
-        outputs = base_model(**inputs)
+        # Forward pass through model (PEFT wrapper handles base model dispatch)
+        outputs = model.forward(**inputs)
         
         # Get model type
         model_type = getattr(model.config, "model_type", None)
