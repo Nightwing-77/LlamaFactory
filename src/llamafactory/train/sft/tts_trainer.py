@@ -146,7 +146,7 @@ class TTSTrainer(Seq2SeqTrainer):
                 self.hidden_projection = nn.Linear(
                     hidden_states.shape[-1], 
                     model.talker.codec_head.in_features
-                ).to(hidden_states.device)
+                ).to(hidden_states.device, dtype=hidden_states.dtype)
             hidden_states = self.hidden_projection(hidden_states)
         
         # Get codec predictions from talker.codec_head
