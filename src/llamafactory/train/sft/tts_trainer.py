@@ -50,7 +50,7 @@ class TTSTrainer(Trainer):
         self.tts_loss_weight = 1.0
         self.text_loss_weight = 0.0  # We don't train on text for TTS
         
-    def compute_loss(self, model: "PreTrainedModel", inputs: dict[str, Any], return_outputs: bool = False):
+    def compute_loss(self, model: "PreTrainedModel", inputs: dict[str, Any], return_outputs: bool = False, num_items_in_batch: int | None = None):
         r"""Compute TTS loss on audio codec tokens.
         
         For TTS training:
