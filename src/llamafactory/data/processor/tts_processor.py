@@ -141,11 +141,12 @@ class TTSDatasetProcessor(SupervisedDatasetProcessor):
             # Get audio codec targets if available
             audio_codes = None
             if has_audio_codes:
-                audio_codes = examples.get("_audio_codes", [])
-                if i < len(audio_codes):
-                    audio_codes = audio_codes[i]
-                else:
-                    audio_codes = examples.get("audio_codes", [])[i] if "audio_codes" in examples else None
+                # Try _audio_codes first (from aligned dataset with underscore prefix)
+                if "_audio_codes" in examples and i < len(examples["_audio_codes"]):
+                    audio_codes = examples["_audio_codes"][i]
+                # Fall back to audio_codes (without underscore)
+                elif "audio_codes" in examples and i < len(examples["audio_codes"]):
+                    audio_codes = examples["audio_codes"][i]
 
             input_ids, labels, audio_code_targets = self._encode_tts_example(
                 prompt=examples["_prompt"][i],
