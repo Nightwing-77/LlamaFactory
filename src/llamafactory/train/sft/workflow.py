@@ -135,6 +135,8 @@ def run_sft(
     if finetuning_args.train_tts:
         logger.info_rank0("Using TTSTrainer for audio codec generation training")
         logger.info_rank0("Creating TTSTrainer...")
+        # Disable NEFTune for TTS - Qwen2.5-Omni doesn't support it
+        training_args.neftune_noise_alpha = None
         trainer = TTSTrainer(
             model=model,
             args=training_args,
