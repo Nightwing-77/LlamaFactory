@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 import torch
 import torch.nn.functional as F
-from transformers import Trainer
+from transformers import Seq2SeqTrainer
 
 from ...extras import logging
 from ...extras.constants import IGNORE_INDEX
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.get_logger(__name__)
 
 
-class TTSTrainer(Trainer):
+class TTSTrainer(Seq2SeqTrainer):
     r"""Trainer for Text-to-Speech training with audio codec targets.
     
     Key differences from standard SFT:
