@@ -141,7 +141,7 @@ def run_sft(
             data_collator=data_collator,
             callbacks=callbacks,
             **dataset_module,
-            **tokenizer_module,
+            **{k: v for k, v in tokenizer_module.items() if k not in ["tokenizer", "processor"]},
         )
     else:
         logger.info_rank0("Using standard Seq2SeqTrainer for SFT training")
