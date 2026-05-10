@@ -61,8 +61,14 @@ class TTSTrainer(Seq2SeqTrainer):
         # Extract audio codec targets if present
         audio_code_targets = inputs.pop("audio_code_targets", None)
         
-        # Forward pass through model (PEFT wrapper handles base model dispatch)
-        outputs = model.forward(**inputs)
+        # Get base model (handle PEFT wrapper)
+        base_model = model
+        if hasattr(model, 'base_model') and hasattr(model.base_model, 'model'):
+            base_model = model.base_model.model
+        
+        # Forward pass through thinker for standard outputs
+        thinker = getattr(base_model, 'thinker', base_model)
+        outputs = thinker(**inputs)
         
         # Get model type
         model_type = getattr(model.config, "model_type", None)
