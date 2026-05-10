@@ -128,14 +128,26 @@ class TTSTrainer(Seq2SeqTrainer):
             return None
         
         # Get the last hidden state from the thinker's internal layers
-        # This should be available if we run forward with output_hidden_states=True
-        if hasattr(thinker, 'model') and hasattr(thinker.model, 'layers'):
-            # For now, we'll use a simpler approach - compute loss directly on logits
-            # The thinker's logits should contain representations we can use
-            hidden_states = outputs.logits  # [batch, seq_len, vocab_size]
+        # Use actual hidden states from the model layers
+        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
+            hidden_states = outputs.hidden_states[-1]  # Last layer hidden states
+        elif hasattr(outputs, "last_hidden_state"):
+            hidden_states = outputs.last_hidden_state
         else:
             logger.warning_once("Could not extract hidden states from thinker")
             return None
+        
+        # Project hidden states to match codec_head input dimension if needed
+        # codec_head expects [batch, seq_len, 896] but hidden_states might be [batch, seq_len, hidden_size]
+        if hidden_states.shape[-1] != model.talker.codec_head.in_features:
+            # Add a linear projection if dimensions don't match
+            import torch.nn as nn
+            if not hasattr(self, 'hidden_projection'):
+                self.hidden_projection = nn.Linear(
+                    hidden_states.shape[-1], 
+                    model.talker.codec_head.in_features
+                ).to(hidden_states.device)
+            hidden_states = self.hidden_projection(hidden_states)
         
         # Get codec predictions from talker.codec_head
         # codec_head projects hidden states to codec vocabulary
