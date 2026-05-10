@@ -2,6 +2,7 @@
 # Model Settings
 # ==========================================
 model_name_or_path: Qwen/Qwen3-Omni-30B-A3B-Instruct
+template: qwen3_omni
 trust_remote_code: true
 
 # ==========================================
@@ -14,10 +15,12 @@ audio_codec_vocab_size: 16000
 
 # LoRA Settings
 finetuning_type: lora
-lora_target: all
+lora_target: q_proj, v_proj, k_proj, o_proj
 lora_rank: 16
 lora_alpha: 32
-lora_dropout: 0.05
+lora_dropout: 0.03
+use_rslora: true
+pure_bf16: true
 
 # ==========================================
 # Dataset
@@ -55,11 +58,7 @@ logging_steps: 10
 # Optimization & Memory
 # ==========================================
 flash_attn: disabled
-gradient_checkpointing: true
-ddp_find_unused_parameters: false
-ddp_backend: nccl
-fsdp: null
-fsdp_config: null
+gradient_checkpointing: false
 max_grad_norm: 1.0
 
 # ==========================================
@@ -90,12 +89,7 @@ run_name: qwen3omni-stt-lahaja
 # ==========================================
 # Hardware
 # ==========================================
-n_gpu: 1
-dataloader_pin_memory: true
-ddp_timeout: 1800
-ddp_bucket_cap_mb: 25
-ddp_broadcast_buffers: false
-local_rank: -1
-deepspeed: null
-low_cpu_mem_usage: true
+dataloader_pin_memory: false
+neftune_noise_alpha: 0
+low_cpu_mem_usage: false
 use_reentrant_gc: false
